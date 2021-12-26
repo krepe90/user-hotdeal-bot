@@ -12,7 +12,7 @@ import bot
 import util
 
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 
 URL_RULIWEB_USER_HOTDEAL = [
@@ -92,9 +92,8 @@ class BotManager:
             elif article["title"] != new_article["title"]:
                 # self.logger.debug("Title update detect: {title} ({url}) -> {new_title}".format(new_title=new_article["title"], **article))
                 result["update"].append(article)
-            # message key 없으면 추가
-            article["message"] = article.get("message", {})
-            # 게시글 데이터 업데이트
+            # 게시글 데이터 업데이트 (message 제외)
+            new_article["message"] = article.get("message", {})
             article.update(new_article)
         # 삭제된 글 메모리(article_cache)에서 제거
         for article in result["remove"]:
@@ -129,6 +128,8 @@ class BotManager:
             for bot_name, bot_instance in self.bots.items():
                 if msg := await bot_instance.send(article):
                     article["message"][bot_name] = msg
+                else:
+                    self.logger.warning("Failed to receive message object: {title} ({url}) -> {bot_name}".format(bot_name=bot_name, **article))
         # 기존 메시지 수정하기
         for article in d["update"]:
             if not article["message"]:

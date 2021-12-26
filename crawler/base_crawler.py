@@ -40,10 +40,15 @@ class BaseCrawler(metaclass=ABCMeta):
 
     async def request(self, url: str) -> Union[str, None]:
         self.logger.debug(f"Send request to {url}")
-        resp = await self.session.get(url)
+        try:
+            resp = await self.session.get(url)
+        except aiohttp.ClientError as e:
+            self.logger.exception(f"Client connection error: {e} ({url})")
+            return
+
         async with resp:
             if resp.status != 200:
-                self.logger.error(f"HTTP Request error: {resp.status} ({url})")
+                self.logger.error(f"Client response error: {resp.status} ({url})")
                 return
             try:
                 if (encoding := resp.get_encoding()) == "euc-kr":

@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 import logging
-from typing import Union
+from typing import Any, Union
 import telegram
 
 from crawler.base_crawler import BaseArticle
@@ -12,7 +12,7 @@ class BaseBot(metaclass=ABCMeta):
         self.logger = logging.getLogger(f"bot.{self.__class__.__name__}")
 
     @abstractmethod
-    async def send(self, data: BaseArticle):
+    async def send(self, data: BaseArticle) -> Union[Any, None]:
         pass
 
     @abstractmethod
@@ -38,6 +38,7 @@ class TelegramBot(BaseBot):
         kwargs = self._make_message(data)
         try:
             msg = self.bot.send_message(chat_id=self.target, **kwargs)
+            self.logger.debug(f"Message send to {self.target} {msg.message_id}")
         except telegram.error.TelegramError:
             self.logger.exception("Message send failed: {title} ({url}) -> {target}".format(target=self.target, **data))
             return

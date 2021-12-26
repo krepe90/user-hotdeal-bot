@@ -38,7 +38,7 @@ class ClienCrawler(BaseCrawler):
             data[_id] = {
                 "article_id": _id,
                 "title": _title_tag.attrs["title"],
-                "site_name": "뽐뿌",
+                "site_name": "클리앙",
                 "board_name": board_name,
                 "writer_name": _writer_tag.text.strip(),
                 "url": f"https://www.clien.net/service/board/{board_url}/{_id}",
