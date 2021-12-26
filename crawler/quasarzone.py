@@ -4,7 +4,7 @@ import re
 from typing import Dict
 from bs4 import BeautifulSoup
 
-from base_crawler import BaseCrawler, BaseArticle
+from .base_crawler import BaseCrawler, BaseArticle
 
 
 class QuasarzoneMobileCrawler(BaseCrawler):
