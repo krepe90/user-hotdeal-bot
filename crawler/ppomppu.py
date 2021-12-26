@@ -44,11 +44,15 @@ class PpomppuCrawler(BaseCrawler):
             if (_view_tag := row.select_one("td:nth-child(6)")) is None:
                 self.logger.warning("Cannot get article view count tag")
                 continue
+            if (_category_tag := row.select_one("td:nth-child(3) tr td div > *:nth-last-child(1)")) is None or not _category_tag.text:
+                self.logger.warning("Cannot get category tag")
+                continue
             _id = int(_id_tag.text.strip())
             # 게시글 번호가 없는 경우 (== 다른 게시판 글인 경우) 스킵
             data[_id] = {
                 "article_id": _id,
                 "title": _title_tag.text.strip(),
+                "category": _category_tag.text.strip(" []"),
                 "site_name": "뽐뿌",
                 "board_name": board_name,
                 "writer_name": _writer_tag.text.strip(),
@@ -95,6 +99,7 @@ class PpomppuRSSCrawler(BaseCrawler):
             data[_id] = {
                 "article_id": _id,
                 "title": _title_tag.text,
+                "category": "",         # 카테고리 정보 없음
                 "site_name": "뽐뿌",
                 "board_name": board_name,
                 "writer_name": _writer_tag.text,

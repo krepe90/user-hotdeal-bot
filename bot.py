@@ -57,7 +57,9 @@ class TelegramBot(BaseBot):
         msg.delete()
 
     def _make_message(self, d: BaseArticle) -> dict:
-        md = escape_markdown("{title}".format(**d))
+        md = escape_markdown("[{category}] {title}".format(**d))
+        if d["extra"].get("price") and d["extra"].get("delivery"):
+            md += f"\n{d['extra']['price']} / {' / '.join(d['extra']['delivery'])}"
         if d["is_end"]:
             md = f"~{md}~"
         btn = [

@@ -27,9 +27,16 @@ class RuliwebCrawler(BaseCrawler):
             if (_id_tag := row.select_one(".info_article_id")) is None or not _id_tag.attrs.get("value", "").isnumeric():
                 self.logger.warning("Cannot get article id tag")
                 continue
-            if (_title_tag := row.select_one(".title_wrapper")) is None or (_title := _title_tag.contents[0]) is None:
+            if (_title_tag := row.select_one(".title_wrapper")) is None or (_title_el := _title_tag.contents[0]) is None:
                 self.logger.warning("Cannot get article title tag")
                 continue
+            if (_re_title := re.match(r"\s*\[([\w/]+)\]\s*(.+)", _title_el.text)) is None:
+                # _category, _title = _title_el.text.strip().split("\n")
+                self.logger.warning("Cannot get article category and title")
+                continue
+            else:
+                category = _re_title.group(1)
+                title = _re_title.group(2)
             if (_writer_tag := row.select_one(".nick")) is None:
                 self.logger.warning("Cannot get writer tag")
                 continue
@@ -43,7 +50,8 @@ class RuliwebCrawler(BaseCrawler):
             _id = int(_id_tag.attrs["value"])
             data[_id] = {
                 "article_id": _id,
-                "title": re.sub(r"\s{2,}", "", _title.text.strip()),
+                "title": title,
+                "category": category,
                 "site_name": "루리웹",
                 "board_name": board_name,
                 "writer_name": _writer_tag.text.strip(),

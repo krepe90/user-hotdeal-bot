@@ -34,10 +34,14 @@ class ClienCrawler(BaseCrawler):
             if (_view_tag := row.select_one(".list_hit .hit")) is None:
                 self.logger.warning("Cannot get article view count tag")
                 continue
+            if (_category_tag := row.select_one(".icon_keyword")) is None or not _category_tag.text:
+                self.logger.warning("Cannot get category tag")
+                continue
             _id = int(row.attrs["data-board-sn"])
             data[_id] = {
                 "article_id": _id,
                 "title": _title_tag.attrs["title"],
+                "category": _category_tag.text,
                 "site_name": "클리앙",
                 "board_name": board_name,
                 "writer_name": _writer_tag.text.strip(),

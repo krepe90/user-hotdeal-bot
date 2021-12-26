@@ -9,8 +9,9 @@ class CrawlerExcpetion(Exception):
 
 
 class BaseArticle(TypedDict):
-    article_id: int            # 게시글 번호
+    article_id: int             # 게시글 번호
     title: str                  # 게시글 제목
+    category: str               # 게시글 카테고리
     site_name: str              # 커뮤니티 사이트 이름
     board_name: str             # 게시판 이름
     writer_name: str            # 작성자 이름 (닉네임)
