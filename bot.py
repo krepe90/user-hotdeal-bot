@@ -40,7 +40,7 @@ class TelegramBot(BaseBot):
             msg = self.bot.send_message(chat_id=self.target, **kwargs)
             self.logger.debug(f"Message send to {self.target} {msg.message_id}")
         except telegram.error.TelegramError:
-            self.logger.exception("Message send failed: {title} ({url}) -> {target}".format(target=self.target, **data))
+            self.logger.exception("Send message failed: {title} ({url}) -> {target}".format(target=self.target, **data))
             return
         else:
             return msg
@@ -51,7 +51,7 @@ class TelegramBot(BaseBot):
             msg.edit_text(**kwargs)
         except telegram.error.BadRequest as e:
             # Message to edit not found (원본메시지 못찾음)
-            self.logger.error("Message to edit not found: {title} ({url}) <- {msg_id}".format(msg_id=msg.message_id, **data))
+            self.logger.error("Edit message failed (e): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data))
 
     async def delete(self, msg: telegram.Message):
         msg.delete()
@@ -62,7 +62,7 @@ class TelegramBot(BaseBot):
         else:
             md = escape_markdown("{title}".format(**d))
         if d["extra"].get("price") and d["extra"].get("delivery"):
-            md += f"\n{d['extra']['price']} / {' / '.join(d['extra']['delivery'])}"
+            md += escape_markdown(f"\n{d['extra']['price']} / {' / '.join(d['extra']['delivery'])}")
         if d["is_end"]:
             md = f"~{md}~"
         btn = [

@@ -30,7 +30,7 @@ class RuliwebCrawler(BaseCrawler):
             if (_title_tag := row.select_one(".title_wrapper")) is None or (_title_el := _title_tag.contents[0]) is None:
                 self.logger.warning("Cannot get article title tag")
                 continue
-            if (_re_title := re.match(r"\s*\[([\w/]+)\]\s*(.+)", _title_el.text)) is None:
+            if (_re_title := re.match(r"\s*\[([\w/]+)\]\s*(.+\S)", _title_el.text)) is None:
                 # _category, _title = _title_el.text.strip().split("\n")
                 self.logger.warning("Cannot get article category and title")
                 continue
