@@ -22,8 +22,8 @@
 
 
 ## Links
-[텔레그램 채널 (한국 커뮤니티 핫딜 모아보기)](https://t.me/hotdeal_kr)
-[패치로그](PATCHLOG.md)
+- [텔레그램 채널 (한국 커뮤니티 핫딜 모아보기)](https://t.me/hotdeal_kr)
+- [패치로그](PATCHLOG.md)
 
 
 ## How to use
