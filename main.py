@@ -1,9 +1,12 @@
+import os
+import sys
 import time
-from typing import Dict, List
+from typing import Any, Dict, List, cast
 import asyncio
 import json
 import logging
 import logging.config
+import signal
 
 import aiohttp
 
@@ -12,7 +15,7 @@ import bot
 import util
 
 
-__version__ = "1.1.0"
+__version__ = "1.1.2"
 
 
 URL_RULIWEB_USER_HOTDEAL = [
@@ -38,6 +41,9 @@ logger_status = logging.getLogger("status")
 class BotManager:
     def __init__(self):
         self.logger = logging.getLogger("BotManager")
+        self.closed = False
+
+    async def init_session(self):
         self.logger.info("Initializing start")
         self.session = aiohttp.ClientSession()
         self.crawlers: Dict[str, crawler.BaseCrawler] = {
@@ -54,6 +60,43 @@ class BotManager:
         }
         self.logger.info(f"{len(self.bots)} bot(s) initialized")
         self.article_cache: Dict[str, Dict[int, crawler.BaseArticle]] = {k: {} for k in self.crawlers.keys()}
+        self.load()
+
+    def load(self, filepath: str = "dump.json"):
+        if not os.path.isfile(filepath):
+            self.logger.warning("Dump file doesn't exists")
+            return
+        kwargs = {
+            "telegram": {"bot": cast(bot.TelegramBot, self.bots["telegram"]).bot}
+        }
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                data: Dict[str, Dict[str, crawler.BaseArticle]] = json.load(f)
+        except json.JSONDecodeError as e:
+            self.logger.warning("Dump JSON file decode error occured")
+            return
+
+        self.logger.info("Article dump data deserialize start")
+        for crawler_name, cwr in data.items():
+            if not self.article_cache.get(crawler_name):
+                self.article_cache[crawler_name] = {}
+            for a_id, a_data in cwr.items():
+                # article_id, article_data
+                new_messages: Dict[str, Any] = {}
+                for msg_type, msg_data in a_data.get("message", {}).items():
+                    if msg_type == "telegram":
+                        new_messages["telegram"] = bot.telegram.Message.de_json(msg_data, **kwargs["telegram"])
+                    else:
+                        continue
+                a_data["message"] = new_messages
+                self.article_cache[crawler_name][int(a_id)] = a_data
+            self.logger.debug(f"{crawler_name}: {len(self.article_cache[crawler_name])} article(s) loaded")
+            self.logger.debug(f"{crawler_name}: article_id range: [{min(self.article_cache[crawler_name])}, {max(self.article_cache[crawler_name])}]")
+        self.logger.info("Article dump data deserialize complete")
+
+    def dump(self, filepath: str = "dump.json"):
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(self.article_cache, f, ensure_ascii=False, indent=2, default=bot.message_serializer)
 
     async def _crawling(self, name: str, cwr: crawler.BaseCrawler) -> Dict[str, List[crawler.BaseArticle]]:
         result: Dict[str, List[crawler.BaseArticle]] = {"new": [], "update": [], "remove": []}
@@ -76,7 +119,7 @@ class BotManager:
         # 글 목록 페이지 뒤로 넘어간 게시글들 메모리에서 지우기 (채팅은 안지움)
         self.article_cache[name] = {n: m for n, m in self.article_cache[name].items() if n >= id_min}
         # 새로 추가된 글 업데이트 (저장된 데이터의 제일 최신 글보다 최신의 것들만 저장)
-        id_cache_max: int = max(self.article_cache[name].keys())
+        id_cache_max: int = max(self.article_cache[name].keys(), default=0)
         _new_articles = {n: m for n, m in recent_data.items() if n > id_cache_max}
         result["new"].extend(_new_articles.values())
         self.article_cache[name].update(_new_articles)
@@ -149,25 +192,67 @@ class BotManager:
         await self.send(data)
 
     async def run(self):
+        await self.init_session()
         self.logger.info("Loop start")
-        while True:
+        loop = asyncio.get_running_loop()
+        while not self.closed:
             self.logger.debug("Task start")
-            await self._run()
+            loop.create_task(self._run())
             self.logger.debug("Task end, sleep")
             await asyncio.sleep(60)
+        self.logger.debug("Loop stop (bot closed)")
 
     async def close(self):
+        if self.closed:
+            self.logger.info("session already closed")
+            return
+        self.closed = True
+        self.logger.info("session close / data dump start")
         for k, cwr in self.crawlers.items():
             if not cwr.session.closed:
                 await cwr.close()
+        self.dump()
+        self.logger.info("session close / data dump end")
 
 
-async def main():
-    bot = BotManager()
-    await bot.run()
+async def shutdown(sig: signal.Signals, bot: BotManager):
+    logger_status.info(f"Received exit signal {sig.name}")
+    loop = asyncio.get_running_loop()
+    # cloasing bot
     await bot.close()
+    # stop all tasks
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    [task.cancel() for task in tasks]
+    await asyncio.gather(*tasks)
+    loop.stop()
+
+
+def main():
+    loop = asyncio.get_event_loop()
+    bot = BotManager()
+    if sys.platform != "darwin" and sys.platform != "win32":
+        signals = (signal.SIGTERM, signal.SIGINT)
+        for sig in signals:
+            loop.add_signal_handler(sig, lambda sig=sig: asyncio.create_task(shutdown(sig, bot)))
+
+    logger_status.info(f"hotdeal bot v{__version__} start!! (PID: {os.getpid()})")
+    try:
+        loop.run_until_complete(bot.run())
+    except KeyboardInterrupt:
+        print("keyboard interrupt")
+    except asyncio.CancelledError:
+        pass
+    finally:
+        if sys.platform == "win32":
+            try:
+                loop.run_until_complete(shutdown(signal.SIGINT, bot))
+            except asyncio.CancelledError:
+                pass
+        loop.close()
+    logger_status.info(f"hotdeal bot v{__version__} stopped!!")
 
 
 if __name__ == "__main__":
-    logger_status.info(f"hotdeal bot v{__version__} start!!")
-    asyncio.run(main())
+    if sys.platform.startswith("win"):
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    main()

@@ -7,6 +7,13 @@ from crawler.base_crawler import BaseArticle
 from util import escape_markdown
 
 
+def message_serializer(obj: Any) -> Any:
+    if isinstance(obj, telegram.Message):
+        return obj.to_dict()
+    else:
+        raise TypeError
+
+
 class BaseBot(metaclass=ABCMeta):
     def __init__(self) -> None:
         self.logger = logging.getLogger(f"bot.{self.__class__.__name__}")
@@ -39,6 +46,8 @@ class TelegramBot(BaseBot):
         try:
             msg = self.bot.send_message(chat_id=self.target, **kwargs)
             self.logger.debug(f"Message send to {self.target} {msg.message_id}")
+        except telegram.error.RetryAfter as e:
+            self.logger.error("Send message failed: ({e}): {title} ({url}) -> {target}".format(e=e, target=self.target, **data))
         except telegram.error.TelegramError:
             self.logger.exception("Send message failed: {title} ({url}) -> {target}".format(target=self.target, **data))
             return
@@ -51,7 +60,7 @@ class TelegramBot(BaseBot):
             msg.edit_text(**kwargs)
         except telegram.error.BadRequest as e:
             # Message to edit not found (원본메시지 못찾음)
-            self.logger.error("Edit message failed (e): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data))
+            self.logger.error("Edit message failed ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data))
 
     async def delete(self, msg: telegram.Message):
         msg.delete()

@@ -131,3 +131,4 @@ dmypy.json
 # project
 config.json
 config_logger.json
+dump.json

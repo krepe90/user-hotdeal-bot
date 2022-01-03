@@ -29,6 +29,10 @@ class QuasarzoneMobileCrawler(BaseCrawler):
             if (_re_url := re.search(r"/bbs/([\w\d_]+)/views/(\d+)", _url)) is None:
                 self.logger.warning("Cannot find board id and article id")
                 continue
+            # locked article
+            if row.select_one(".fa-lock") is not None:
+                self.logger.debug(f"Find locked article, skip")
+                continue
             if (_title_tag := row.select_one(".ellipsis-with-reply-cnt")) is None or not _title_tag.text:
                 self.logger.warning("Cannot find article title tag")
                 continue
