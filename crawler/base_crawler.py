@@ -26,6 +26,7 @@ class BaseCrawler(metaclass=ABCMeta):
         self.session: aiohttp.ClientSession = session if session is not None else aiohttp.ClientSession(trust_env=True)
         self.url_list: List[str] = url_list
         self.logger = logging.getLogger(f"crawler.{self.__class__.__name__}")
+        self._prev_status = 200
 
     async def get(self) -> Dict[int, BaseArticle]:
         html_list: List[str] = []
@@ -49,8 +50,15 @@ class BaseCrawler(metaclass=ABCMeta):
 
         async with resp:
             if resp.status != 200:
-                self.logger.error(f"Client response error: {resp.status} ({url})")
+                if resp.status != self._prev_status:
+                    self.logger.error(f"Client response error: {resp.status} ({url})")
+                else:
+                    self.logger.info(f"Client response error [skip]: {resp.status} ({url})")
+                self._prev_status = resp.status
                 return
+            else:
+                self._prev_status = resp.status
+
             try:
                 if (encoding := resp.get_encoding()) == "euc-kr":
                     encoding = "cp949"

@@ -15,7 +15,7 @@ import bot
 import util
 
 
-__version__ = "1.1.2"
+__version__ = "1.1.3"
 
 
 URL_RULIWEB_USER_HOTDEAL = [
@@ -103,7 +103,7 @@ class BotManager:
         # 크롤러로부터 글 목록 불러오기
         recent_data: Dict[int, crawler.BaseArticle] = await cwr.get()
         if not recent_data:
-            self.logger.warning(f"{cwr.__class__.__name__}: Crawling result is empty!!")
+            # self.logger.warning(f"{cwr.__class__.__name__}: Crawling result is empty!!")
             return result
         # 글 번호 최소
         id_min: int = min(recent_data.keys())
@@ -253,6 +253,6 @@ def main():
 
 
 if __name__ == "__main__":
-    if sys.platform.startswith("win"):
+    if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     main()
