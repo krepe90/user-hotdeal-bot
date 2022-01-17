@@ -15,7 +15,7 @@ import bot
 import util
 
 
-__version__ = "1.1.3"
+__version__ = "1.1.4"
 
 
 URL_RULIWEB_USER_HOTDEAL = [
@@ -28,6 +28,10 @@ URL_PPOMPPU_FOREIGN = ["https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu4"
 URL_CLIEN_JIRUM = ["https://www.clien.net/service/board/jirum"]
 URL_COOLENJOY_JIRUM_RSS = ["https://coolenjoy.net/rss?bo_table=jirum"]
 URL_QUASARZONE_SALEINFO_MOBILE = ["https://quasarzone.com/bbs/qb_saleinfo?device=mobile"]
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36"
+}
 
 
 with open("config_logger.json", "r") as f:
@@ -45,7 +49,7 @@ class BotManager:
 
     async def init_session(self):
         self.logger.info("Initializing start")
-        self.session = aiohttp.ClientSession()
+        self.session = aiohttp.ClientSession(headers=HEADERS, trust_env=True)
         self.crawlers: Dict[str, crawler.BaseCrawler] = {
             "ruliweb_user_hotdeal": crawler.RuliwebCrawler(URL_RULIWEB_USER_HOTDEAL, self.session),
             "ppomppu_board": crawler.PpomppuCrawler(URL_PPOMPPU, self.session),
@@ -91,7 +95,7 @@ class BotManager:
                 a_data["message"] = new_messages
                 self.article_cache[crawler_name][int(a_id)] = a_data
             self.logger.debug(f"{crawler_name}: {len(self.article_cache[crawler_name])} article(s) loaded")
-            self.logger.debug(f"{crawler_name}: article_id range: [{min(self.article_cache[crawler_name])}, {max(self.article_cache[crawler_name])}]")
+            self.logger.debug(f"{crawler_name}: article_id range: [{min(self.article_cache[crawler_name], default=0)}, {max(self.article_cache[crawler_name], default=0)}]")
         self.logger.info("Article dump data deserialize complete")
 
     def dump(self, filepath: str = "dump.json"):

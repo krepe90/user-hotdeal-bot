@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+import asyncio
 import logging
 from typing import Any, Union
 import telegram
@@ -41,15 +42,26 @@ class TelegramBot(BaseBot):
         self.bot = telegram.Bot(token)
         self.target = target
 
-    async def send(self, data: BaseArticle) -> Union[telegram.Message, None]:
+    async def send(self, data: BaseArticle, retry: bool = True) -> Union[telegram.Message, None]:
         kwargs = self._make_message(data)
         try:
             msg = self.bot.send_message(chat_id=self.target, **kwargs)
             self.logger.debug(f"Message send to {self.target} {msg.message_id}")
+        except telegram.error.TimedOut as e:
+            if retry:
+                self.logger.warning("Retry send message: ({e}): {title} ({url}) -> {target}".format(e=e, target=self.target, **data))
+                msg = await self.send(data, retry=False)
+            else:
+                self.logger.error("Send message timeout: ({e}): {title} ({url}) -> {target}".format(e=e, target=self.target, **data))
         except telegram.error.RetryAfter as e:
+            if retry:
+                self.logger.warning("Retry send message after {t} secs: ({e}): {title} ({url}) -> {target}".format(e=e, t=e.retry_after, target=self.target, **data))
+                await asyncio.sleep(e.retry_after)
+                msg = await self.send(data, retry=False)
+            else:
+                self.logger.error("Send message failed: ({e}): {title} ({url}) -> {target}".format(e=e, target=self.target, **data))
+        except telegram.error.TelegramError as e:
             self.logger.error("Send message failed: ({e}): {title} ({url}) -> {target}".format(e=e, target=self.target, **data))
-        except telegram.error.TelegramError:
-            self.logger.exception("Send message failed: {title} ({url}) -> {target}".format(target=self.target, **data))
             return
         else:
             return msg
