@@ -40,12 +40,22 @@ class BaseCrawler(metaclass=ABCMeta):
 
         return data
 
-    async def request(self, url: str) -> Union[str, None]:
+    async def _request(self, url: str, retry: bool = True) -> Union[aiohttp.ClientResponse, None]:
+        # 함수 이름을 제멋대로 대충 지어버리는 사람
         self.logger.debug(f"Send request to {url}")
         try:
             resp = await self.session.get(url)
         except aiohttp.ClientError as e:
-            self.logger.exception(f"Client connection error: {e} ({url})")
+            if retry:
+                self.logger.warning(f"Re-send request to {url}")
+                resp = await self._request(url, False)
+            else:
+                self.logger.error(f"Client connection error: {e} ({url})")
+                return
+        return resp
+
+    async def request(self, url: str) -> Union[str, None]:
+        if (resp := await self._request(url)) is None:
             return
 
         async with resp:

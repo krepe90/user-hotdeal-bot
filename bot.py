@@ -61,8 +61,11 @@ class TelegramBot(BaseBot):
             else:
                 self.logger.error("Send message failed: ({e}): {title} ({url}) -> {target}".format(e=e, target=self.target, **data))
         except telegram.error.TelegramError as e:
-            self.logger.error("Send message failed: ({e}): {title} ({url}) -> {target}".format(e=e, target=self.target, **data))
-            return
+            if retry:
+                self.logger.warning("Retry send message: {e.__name__} ({e}): {title} ({url}) -> {target}".format(e=e, target=self.target, **data))
+                msg = await self.send(data, retry=False)
+            else:
+                self.logger.error("Send message failed: {e.__name__} ({e}): {title} ({url}) -> {target}".format(e=e, target=self.target, **data))
         else:
             return msg
 
