@@ -1,5 +1,8 @@
 # PATCHLOG
 
+## v1.1.7 (2022-02-19)
+- aiohttp 라이브러리의 `Cannot guess the encoding of a not yet read body` 오류 개선
+
 ## v1.1.6 (2022-02-18)
 - 클리앙 크롤링 과정의 오류 수정
 

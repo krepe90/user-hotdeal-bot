@@ -70,6 +70,7 @@ class BaseCrawler(metaclass=ABCMeta):
                 self._prev_status = resp.status
 
             try:
+                await resp.read()
                 if (encoding := resp.get_encoding()) == "euc-kr":
                     encoding = "cp949"
                 html = await resp.text(encoding=encoding)
