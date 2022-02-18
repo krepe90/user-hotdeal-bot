@@ -28,9 +28,6 @@ class ClienCrawler(BaseCrawler):
             if (_writer_tag := row.select_one(".list_author")) is None:
                 self.logger.warning("Cannot get article writer tag")
                 continue
-            if (_recommend_tag := row.select_one(".list_votes")) is None:
-                self.logger.warning("Cannot get article recommend count tag")
-                continue
             if (_view_tag := row.select_one(".list_hit .hit")) is None:
                 self.logger.warning("Cannot get article view count tag")
                 continue
@@ -38,6 +35,8 @@ class ClienCrawler(BaseCrawler):
                 self.logger.warning("Cannot get category tag")
                 continue
             _id = int(row.attrs["data-board-sn"])
+            _recommend_tag = row.select_one(".list_votes")
+            _recommend = _recommend_tag.text.strip() if _recommend_tag else "0"
             data[_id] = {
                 "article_id": _id,
                 "title": _title_tag.attrs["title"],
@@ -48,7 +47,7 @@ class ClienCrawler(BaseCrawler):
                 "url": f"https://www.clien.net/service/board/{board_url}/{_id}",
                 "is_end": "sold_out" in row["class"],
                 "extra": {
-                    "recommend": _recommend_tag.text.strip(),
+                    "recommend": _recommend,
                     "view": _view_tag.text
                 },
                 "message": {}
