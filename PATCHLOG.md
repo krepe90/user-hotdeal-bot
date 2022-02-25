@@ -1,5 +1,8 @@
 # PATCHLOG
 
+## v1.1.8 (2022-02-26)
+- 퀘이서존 크롤러 오류 일부 수정
+
 ## v1.1.7 (2022-02-19)
 - aiohttp 라이브러리의 `Cannot guess the encoding of a not yet read body` 오류 개선
 

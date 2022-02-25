@@ -39,7 +39,7 @@ class QuasarzoneMobileCrawler(BaseCrawler):
             if (_nick_tag := row.select_one(".nick")) is None or not _nick_tag.attrs.get("data-nick"):
                 self.logger.warning("Cannot find article writer tag")
                 continue
-            if (_recommend_tag := row.select_one(".good-wrap > span.num")) is None or not _recommend_tag.text:
+            if (_recommend_tag := row.select_one(".count:last-child")) is None or not _recommend_tag.text:
                 self.logger.warning("Cannot get recommend value tag")
                 continue
             if (_view_tag := row.select_one(".count")) is None or not _view_tag.text:
@@ -72,7 +72,7 @@ class QuasarzoneMobileCrawler(BaseCrawler):
                 "url": f"https://quasarzone.com/bbs/{_board_id}/views/{_id}",
                 "is_end": is_end,
                 "extra": {
-                    "recommend": _recommend_tag.text.strip(),
+                    "recommend": _recommend_tag.text.strip().replace("추천 : ", ""),
                     "view": _view_tag.text.strip(),
                     "price": _price_tag.text.strip(),
                     "delivery": delivery
