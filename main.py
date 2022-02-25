@@ -15,7 +15,7 @@ import bot
 import util
 
 
-__version__ = "1.1.8"
+__version__ = "1.1.9"
 
 
 URL_RULIWEB_USER_HOTDEAL = [
@@ -27,7 +27,8 @@ URL_PPOMPPU_RSS = ["http://www.ppomppu.co.kr/rss.php?id=ppomppu"]
 URL_PPOMPPU_FOREIGN = ["https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu4"]
 URL_CLIEN_JIRUM = ["https://www.clien.net/service/board/jirum"]
 URL_COOLENJOY_JIRUM_RSS = ["https://coolenjoy.net/rss?bo_table=jirum"]
-URL_QUASARZONE_SALEINFO_MOBILE = ["https://quasarzone.com/bbs/qb_saleinfo?device=mobile"]
+URL_QUASARZONE_SALEINFO = ["https://quasarzone.com/bbs/qb_saleinfo"]
+# URL_QUASARZONE_SALEINFO_MOBILE = ["https://quasarzone.com/bbs/qb_saleinfo?device=mobile"]
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36"
@@ -56,7 +57,7 @@ class BotManager:
             "ppomppu_foreign": crawler.PpomppuCrawler(URL_PPOMPPU_FOREIGN, self.session),
             "clien_jirum": crawler.ClienCrawler(URL_CLIEN_JIRUM, self.session),
             "coolenjoy_jirum_rss": crawler.CoolenjoyRSSCrawler(URL_COOLENJOY_JIRUM_RSS, self.session),
-            "quasarzone_saleinfo_mobile": crawler.QuasarzoneMobileCrawler(URL_QUASARZONE_SALEINFO_MOBILE, self.session)
+            "quasarzone_saleinfo": crawler.QuasarzoneCrawler(URL_QUASARZONE_SALEINFO, self.session)
         }
         self.logger.info(f"{len(self.crawlers)} crawler(s) initialized")
         self.bots: Dict[str, bot.BaseBot] = {
