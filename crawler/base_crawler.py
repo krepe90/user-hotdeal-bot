@@ -45,6 +45,9 @@ class BaseCrawler(metaclass=ABCMeta):
         self.logger.debug(f"Send request to {url}")
         try:
             resp = await self.session.get(url)
+        except aiohttp.ServerTimeoutError as e:
+            self.logger.error(f"Client connection timeout error: {e} ({url})")
+            return
         except aiohttp.ClientError as e:
             if retry:
                 self.logger.warning(f"Re-send request to {url}")

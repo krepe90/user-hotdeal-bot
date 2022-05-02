@@ -50,7 +50,8 @@ class BotManager:
 
     async def init_session(self):
         self.logger.info("Initializing start")
-        self.session = aiohttp.ClientSession(headers=HEADERS, trust_env=True)
+        timeout = aiohttp.ClientTimeout(total=30)
+        self.session = aiohttp.ClientSession(headers=HEADERS, trust_env=True, timeout=timeout)
         self.crawlers: Dict[str, crawler.BaseCrawler] = {
             "ruliweb_user_hotdeal": crawler.RuliwebCrawler(URL_RULIWEB_USER_HOTDEAL, self.session),
             "ppomppu_board": crawler.PpomppuCrawler(URL_PPOMPPU, self.session),
@@ -170,7 +171,10 @@ class BotManager:
             self.logger.debug("Update: {title} ({url})".format(**article))
         for article in result["remove"]:
             self.logger.debug("Remove: {title} ({url})".format(**article))
-        self.logger.info(f"Crawling time: {time.time() - st}")
+        crawling_time = time.time() - st
+        self.logger.info(f"Crawling time: {crawling_time}")
+        if crawling_time > 30:
+            self.logger.warning(f"Crawling time is too long: {crawling_time}")
         return result
 
     async def send(self, d: Dict[str, List[crawler.BaseArticle]]):
