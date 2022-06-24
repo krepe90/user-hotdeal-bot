@@ -41,6 +41,8 @@ class CoolenjoyRSSCrawler(BaseCrawler):
             if (_title_tag := row.find("title")) is None or _title_tag.text is None:
                 self.logger.warning("Cannot find article title tag")
                 continue
+            if _title_tag == "삭제된 글":
+                continue
             if (_writer_tag := row.find("dc:creator", self.ns)) is None or _writer_tag.text is None:
                 self.logger.warning("Cannot find article writer tag")
                 continue
