@@ -45,14 +45,17 @@ class PpomppuCrawler(BaseCrawler):
                 self.logger.warning("Cannot get article view count tag")
                 continue
             if (_category_tag := row.select_one("td:nth-child(3) tr td div > *:nth-last-child(1)")) is None or not _category_tag.text:
-                self.logger.warning("Cannot get category tag")
-                continue
+                # 뽐뿌게시판 분류 삭제(?) 대응
+                # self.logger.warning("Cannot get category tag")
+                category_tag = ""
+            else:
+                category_tag = _category_tag.text.strip(" []")
             _id = int(_id_tag.text.strip())
             # 게시글 번호가 없는 경우 (== 다른 게시판 글인 경우) 스킵
             data[_id] = {
                 "article_id": _id,
                 "title": _title_tag.text.strip(),
-                "category": _category_tag.text.strip(" []"),
+                "category": category_tag,
                 "site_name": "뽐뿌",
                 "board_name": board_name,
                 "writer_name": _writer_tag.text.strip(),

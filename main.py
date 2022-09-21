@@ -15,7 +15,7 @@ import bot
 import util
 
 
-__version__ = "1.1.11a"
+__version__ = "1.1.12"
 
 
 URL_RULIWEB_USER_HOTDEAL = [
