@@ -15,7 +15,7 @@ import bot
 import util
 
 
-__version__ = "1.1.12"
+__version__ = "1.1.13"
 
 
 URL_RULIWEB_USER_HOTDEAL = [
@@ -28,6 +28,7 @@ URL_PPOMPPU_FOREIGN = ["https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu4"
 URL_CLIEN_JIRUM = ["https://www.clien.net/service/board/jirum"]
 URL_COOLENJOY_JIRUM_RSS = ["https://coolenjoy.net/rss?bo_table=jirum"]
 URL_QUASARZONE_SALEINFO = ["https://quasarzone.com/bbs/qb_saleinfo"]
+URL_ARCALIVE_HOTDEAL = ["https://arca.live/b/hotdeal"]
 # URL_QUASARZONE_SALEINFO_MOBILE = ["https://quasarzone.com/bbs/qb_saleinfo?device=mobile"]
 
 HEADERS = {
@@ -58,7 +59,8 @@ class BotManager:
             "ppomppu_foreign": crawler.PpomppuCrawler(URL_PPOMPPU_FOREIGN, self.session),
             "clien_jirum": crawler.ClienCrawler(URL_CLIEN_JIRUM, self.session),
             "coolenjoy_jirum_rss": crawler.CoolenjoyRSSCrawler(URL_COOLENJOY_JIRUM_RSS, self.session),
-            "quasarzone_saleinfo": crawler.QuasarzoneCrawler(URL_QUASARZONE_SALEINFO, self.session)
+            "quasarzone_saleinfo": crawler.QuasarzoneCrawler(URL_QUASARZONE_SALEINFO, self.session),
+            "arcalive_hotdeal": crawler.ArcaLiveCrawler(URL_ARCALIVE_HOTDEAL, self.session),
         }
         self.logger.info(f"{len(self.crawlers)} crawler(s) initialized")
         self.bots: Dict[str, bot.BaseBot] = {
