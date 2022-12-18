@@ -37,7 +37,7 @@ class ArcaLiveCrawler(BaseCrawler):
             else:
                 # 제목 뒤의 (가격/배송비) 제거
                 title = re.sub(r"(.+) \(\S+\/\S+\)", r"\1", _title)
-            if (_url := _title_tag.attrs.get("href")) is None or (re_id := re.match(r"\/b\/([\w\d])+\/(\d+)\??.+", _url)) is None:
+            if (_url := _title_tag.attrs.get("href")) is None or (re_id := re.match(r"\/b\/([\w\d]+)\/(\d+)\??.+", _url)) is None:
                 self.logger.warning("Cannot parse article url")
                 continue
             else:
