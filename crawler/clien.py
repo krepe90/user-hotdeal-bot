@@ -25,6 +25,9 @@ class ClienCrawler(BaseCrawler):
             if (_title_tag := row.select_one(".list_subject")) is None:
                 self.logger.warning("Cannot get article title tag")
                 continue
+            if "●▅" in _title_tag.attrs["title"]:
+                # 시위성 게시글(?) 무시
+                continue
             if (_writer_tag := row.select_one(".list_author")) is None:
                 self.logger.warning("Cannot get article writer tag")
                 continue
