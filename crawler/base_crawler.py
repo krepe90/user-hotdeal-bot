@@ -44,13 +44,13 @@ class BaseCrawler(metaclass=ABCMeta):
         # 함수 이름을 제멋대로 대충 지어버리는 사람
         self.logger.debug(f"Send request to {url}")
         try:
-            resp = await self.session.get(url)
+            resp = await self.session.get(url, allow_redirects=False)
         except aiohttp.ServerTimeoutError as e:
             self.logger.error(f"Client connection timeout error: {e} ({url})")
             return
         except aiohttp.ClientError as e:
             if retry:
-                self.logger.warning(f"Re-send request to {url}")
+                # self.logger.warning(f"Re-send request to {url}")
                 resp = await self._request(url, False)
             else:
                 self.logger.error(f"Client connection error: {e} ({url})")

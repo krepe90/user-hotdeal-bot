@@ -15,7 +15,7 @@ import bot
 import util
 
 
-__version__ = "1.1.15"
+__version__ = "1.1.16"
 
 
 URL_RULIWEB_USER_HOTDEAL = [
@@ -32,7 +32,7 @@ URL_ARCALIVE_HOTDEAL = ["https://arca.live/b/hotdeal"]
 # URL_QUASARZONE_SALEINFO_MOBILE = ["https://quasarzone.com/bbs/qb_saleinfo?device=mobile"]
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
 }
 
 
@@ -111,6 +111,7 @@ class BotManager:
         # 크롤러로부터 글 목록 불러오기
         recent_data: Dict[int, crawler.BaseArticle] = await cwr.get()
         if not recent_data:
+            # 글 목록이 비어있는 경우 (파싱에 실패한 경우) 상태 변경 없이 빈 값 반환.
             # self.logger.warning(f"{cwr.__class__.__name__}: Crawling result is empty!!")
             return result
         # 글 번호 최소
@@ -165,16 +166,15 @@ class BotManager:
             result["update"].extend(d["update"])
             result["remove"].extend(d["remove"])
         # logging
-        if result["new"] or result["update"] or result["remove"]:
-            self.logger.info(f"Crawling result: {len(result['new'])} / {len(result['update'])} / {len(result['remove'])}")
-        for article in result["new"]:
-            self.logger.debug("New: {title} ({url})".format(**article))
-        for article in result["update"]:
-            self.logger.debug("Update: {title} ({url})".format(**article))
-        for article in result["remove"]:
-            self.logger.debug("Remove: {title} ({url})".format(**article))
+        if self.logger.isEnabledFor(logging.DEBUG):
+            for article in result["new"]:
+                self.logger.debug("New: {title} ({url})".format(**article))
+            for article in result["update"]:
+                self.logger.debug("Update: {title} ({url})".format(**article))
+            for article in result["remove"]:
+                self.logger.debug("Remove: {title} ({url})".format(**article))
         crawling_time = time.time() - st
-        self.logger.info(f"Crawling time: {crawling_time}")
+        self.logger.info(f"Result: {crawling_time:.2f}s, {len(result['new'])}/{len(result['update'])}/{len(result['remove'])}")
         if crawling_time > 30:
             self.logger.warning(f"Crawling time is too long: {crawling_time}")
         return result
