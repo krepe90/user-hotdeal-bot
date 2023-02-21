@@ -19,6 +19,7 @@
 - [클리앙 - 알뜰구매](https://www.clien.net/service/board/jirum)
 - [쿨앤조이 - 지름, 알뜰정보](https://coolenjoy.net/bbs/jirum): RSS 사용 [(링크)](https://coolenjoy.net/rss?bo_table=jirum)
 - [퀘이서존 - 지름/할인정보](https://quasarzone.com/bbs/qb_saleinfo): 모바일 페이지 사용
+- [아카라이브 - 핫딜 채널](https://arca.live/b/hotdeal)
 
 
 ## Links
@@ -64,8 +65,13 @@
   - [x] 경고 이상의 주요 로그 (warning+) -> 텔레그램 메신저
 - [x] [퀘이사존 지름/핫딜정보](https://quasarzone.com/bbs/qb_saleinfo) 추가
 - [x] 게시글 캐시 덤프/로드 기능
-- [ ] 크롤러, 봇 목록도 json으로부터 불러오기
 - [x] 카테고리 정보 파싱 추가
+- [ ] 크롤러, 봇 목록도 json으로부터 불러오기
+- [ ] systemctl reload 시그널(아마도 `signal.SIG_HUP`) 대응
+  - [ ] `BotManager.reload` 메소드 작성
 - [ ] docstring 작성
-- [ ] 개별 사이트 점검중일때의 대응 추가
-- [ ] 게시글 추천수 보여주기
+- [ ] Telegram bot 메시지 전송도 비동기적인 코드로 전환 (PTB 말고 다른 패키지 사용도 고려)
+- [ ] 개별 사이트 점검중일때의 대응 추가 (진행중)
+- [ ] 게시글 추천수 보여주기 (진행중)
+- [ ] **테스트 코드 작성**
+- [ ] 도커 컨테이너화
