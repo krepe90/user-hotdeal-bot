@@ -33,7 +33,7 @@ class CoolenjoyRSSCrawler(BaseCrawler):
                 self.logger.warning("Cannot find article url tag")
                 continue
             _url = unescape(_link_tag.text).replace(":443", "")
-            if (re_url := re.search(r"/board\.php\?bo_table=([\w\d]+)&wr_id=(\d+)", _url)) is None:
+            if (re_url := re.search(r"\/bbs\/(\w+)\/(\d+)", _url)) is None:
                 self.logger.warning("Cannot find board id and article id")
                 continue
             # elif  (re_url := re.search(r"/bbs/([\w\d]+)/(\d+)", _url)) is None:

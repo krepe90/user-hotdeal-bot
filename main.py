@@ -15,7 +15,7 @@ import bot
 import util
 
 
-__version__ = "1.1.17"
+__version__ = "1.1.18"
 
 
 URL_RULIWEB_USER_HOTDEAL = [
@@ -26,7 +26,7 @@ URL_PPOMPPU = ["https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu"]
 URL_PPOMPPU_RSS = ["http://www.ppomppu.co.kr/rss.php?id=ppomppu"]
 URL_PPOMPPU_FOREIGN = ["https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu4"]
 URL_CLIEN_JIRUM = ["https://www.clien.net/service/board/jirum"]
-URL_COOLENJOY_JIRUM_RSS = ["https://coolenjoy.net/rss?bo_table=jirum"]
+URL_COOLENJOY_JIRUM_RSS = ["https://coolenjoy.net/bbs/rss.php?bo_table=jirum"]
 URL_QUASARZONE_SALEINFO = ["https://quasarzone.com/bbs/qb_saleinfo"]
 URL_ARCALIVE_HOTDEAL = ["https://arca.live/b/hotdeal"]
 # URL_QUASARZONE_SALEINFO_MOBILE = ["https://quasarzone.com/bbs/qb_saleinfo?device=mobile"]
