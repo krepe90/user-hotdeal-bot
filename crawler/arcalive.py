@@ -31,12 +31,11 @@ class ArcaLiveCrawler(BaseCrawler):
             if (_title_tag := row.select_one(".title")) is None:
                 self.logger.warning("Cannot get article title tag")
                 continue
-            if (_title := _title_tag.get_text(strip=True)) is None:
+            if (_title := _title_tag.find_all(string=True, recursive=False)) is None:
                 self.logger.warning("Cannot get article title")
                 continue
             else:
-                # 제목 뒤의 (가격/배송비) 제거
-                title = re.sub(r"(.+) \(\S+\/\S+\)", r"\1", _title)
+                title = "".join(_title).strip()
             if (_url := _title_tag.attrs.get("href")) is None or (re_id := re.match(r"\/b\/([\w\d]+)\/(\d+)\??.+", _url)) is None:
                 self.logger.warning("Cannot parse article url")
                 continue
