@@ -24,13 +24,15 @@ class PpomppuCrawler(BaseCrawler):
             return {}
         board_name = _board_name.text.strip()
         board_url = _board_url.attrs["value"]
-        rows = table.select("tr.list0, tr.list1")
+        rows = table.select("tr.common-list0, tr.common-list1")
 
         data: Dict[int, BaseArticle] = {}
         for row in rows:
-            if (_id_tag := row.select_one("td:nth-child(1)")) is None or not _id_tag.text.strip().isnumeric():
-                # 뽐뿌 사이트 구조가 이상해서 임시로 로깅 비활성화
-                # self.logger.warning("Cannot get article id tag")
+            if (_id_tag := row.select_one("td:nth-child(1)")) is None:
+                self.logger.warning("Cannot get article id tag")
+                continue
+            if not _id_tag.text.strip().isnumeric():
+                # ID가 있는 게시글만 가져올 것이기 때문에 로깅 필요 X
                 continue
             if (_title_tag := row.select_one("font")) is None:
                 self.logger.warning("Cannot get article title tag")

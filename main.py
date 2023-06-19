@@ -15,7 +15,7 @@ import bot
 import util
 
 
-__version__ = "1.1.18"
+__version__ = "1.1.19"
 
 
 URL_RULIWEB_USER_HOTDEAL = [
@@ -32,7 +32,8 @@ URL_ARCALIVE_HOTDEAL = ["https://arca.live/b/hotdeal"]
 # URL_QUASARZONE_SALEINFO_MOBILE = ["https://quasarzone.com/bbs/qb_saleinfo?device=mobile"]
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+    # "User-Agent": f"user-hotdeal-bot/{__version__} (+https://github.com/krepe90/user-hotdeal-bot)"
 }
 
 

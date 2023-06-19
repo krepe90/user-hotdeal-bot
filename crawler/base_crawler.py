@@ -40,8 +40,7 @@ class BaseCrawler(metaclass=ABCMeta):
 
         return data
 
-    async def _request(self, url: str, retry: bool = True) -> Union[aiohttp.ClientResponse, None]:
-        # 함수 이름을 제멋대로 대충 지어버리는 사람
+    async def _request(self, url: str, retry: bool = False) -> Union[aiohttp.ClientResponse, None]:
         self.logger.debug(f"Send request to {url}")
         try:
             resp = await self.session.get(url, allow_redirects=False)
@@ -50,7 +49,6 @@ class BaseCrawler(metaclass=ABCMeta):
             return
         except aiohttp.ClientError as e:
             if retry:
-                # self.logger.warning(f"Re-send request to {url}")
                 resp = await self._request(url, False)
             else:
                 self.logger.error(f"Client connection error: {e} ({url})")

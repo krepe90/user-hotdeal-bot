@@ -10,15 +10,22 @@
 - 열심히 배워서 그럴듯하게 적용한 로깅
 - 기능은 아니지만, 추천인 광고 없을 예정
 
-### 크롤링 대상 게시판
-아래 게시판들을 약 1분 주기로 크롤링합니다. 같은 사이트, 동일한 구조의 게시판이라면 크롤러의 소스코드 수정 없이 URL만 바꾸어 사용할 수 있습니다. [(예시)](main.py#L53)
+### 크롤링 방식 안내
+아래 게시판들에 대해 각각 **1분에 한번씩** 크롤링 작업을 실행합니다.[(참조)](main.py#L220) 각 작업마다 게시판 글 목록 1페이지에 한하여 **단 한번** 요청을 합니다. (즉 각 크롤러마다 기본적으로 **1분에 1회의 요청**이 가해지게 됩니다.)
+작업 간격은 정확히 1분을 목표로 하고 있으나, 현재 구조 한계상 매 작업마다 수 ms정도의 지연이 누적되고 있는 듯 합니다.
+현재 본 봇은 오라클 클라우드의 서울 리전 무료 인스턴스에서 가동중입니다.
+같은 사이트, 동일한 구조의 게시판인 경우 크롤러 소스코드 수정 없이 URL만 변경하여 사용할 수 있습니다. [(예시)](main.py#L53)
 
-- [루리웹 - 유저 예판 핫딜 뽐뿌 게시판](https://bbs.ruliweb.com/market/board/1020?view=thumbnail&page=1): 썸네일 모드 사용
+- [루리웹 - 유저 예판 핫딜 뽐뿌 게시판](https://bbs.ruliweb.com/market/board/1020?view=thumbnail&page=1)
+  썸네일 모드를 사용합니다.
 - [뽐뿌 - 뽐뿌 게시판](https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu)
+  RSS 크롤러가 구현되어 있으나, 사용하지 않습니다.
 - [뽐뿌 - 해외뽐뿌](https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu4)
+  RSS 크롤러가 구현되어 있으나, 사용하지 않습니다.
 - [클리앙 - 알뜰구매](https://www.clien.net/service/board/jirum)
-- [쿨앤조이 - 지름, 알뜰정보](https://coolenjoy.net/bbs/jirum): RSS 사용 [(링크)](https://coolenjoy.net/rss?bo_table=jirum)
-- [퀘이서존 - 지름/할인정보](https://quasarzone.com/bbs/qb_saleinfo): 모바일 페이지 사용
+- [쿨앤조이 - 지름, 알뜰정보](https://coolenjoy.net/bbs/jirum)
+  RSS 사용 [(링크)](https://coolenjoy.net/rss?bo_table=jirum)
+- [퀘이사존 - 지름/할인정보](https://quasarzone.com/bbs/qb_saleinfo)
 - [아카라이브 - 핫딜 채널](https://arca.live/b/hotdeal)
 
 
@@ -70,7 +77,7 @@
 - [ ] systemctl reload 시그널(아마도 `signal.SIG_HUP`) 대응
   - [ ] `BotManager.reload` 메소드 작성
 - [ ] docstring 작성
-- [ ] Telegram bot 메시지 전송도 비동기적인 코드로 전환 (PTB 말고 다른 패키지 사용도 고려)
+- [ ] Telegram bot 메시지 전송도 비동기적인 코드로 전환
 - [ ] 개별 사이트 점검중일때의 대응 추가 (진행중)
 - [ ] 게시글 추천수 보여주기 (진행중)
 - [ ] **테스트 코드 작성**
