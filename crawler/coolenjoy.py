@@ -1,11 +1,10 @@
 # https://coolenjoy.net/bbs/jirum
 # https://coolenjoy.net/rss?bo_table=jirum (RSS)
-import asyncio
 import re
+from bs4 import BeautifulSoup
 from html import unescape
 from typing import Dict
-from bs4 import BeautifulSoup
-import xml.etree.ElementTree as ElementTree
+from xml.etree import ElementTree
 
 
 from .base_crawler import BaseArticle, BaseCrawler
@@ -54,9 +53,9 @@ class CoolenjoyRSSCrawler(BaseCrawler):
                 "site_name": "쿨앤조이",
                 "board_name": board_name,
                 "writer_name": _writer_tag.text,
+                "crawler_name": self.name,
                 "url": f"https://coolenjoy.net/bbs/{re_url.group(1)}/{re_url.group(2)}",
                 "is_end": False,
-                "extra": {},
-                "message": {}
+                "extra": {}
             }
         return data

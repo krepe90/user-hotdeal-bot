@@ -1,8 +1,7 @@
 # 지름/할인정보 https://quasarzone.com/bbs/qb_saleinfo
-import asyncio
 import re
-from typing import Dict
 from bs4 import BeautifulSoup
+from typing import Dict
 
 from .base_crawler import BaseCrawler, BaseArticle
 
@@ -70,6 +69,7 @@ class QuasarzoneMobileCrawler(BaseCrawler):
                 "site_name": "퀘이사존",
                 "board_name": board_name,
                 "writer_name": _nick_tag.text.strip(),
+                "crawler_name": self.name,
                 "url": f"https://quasarzone.com/bbs/{_board_id}/views/{_id}",
                 "is_end": is_end,
                 "extra": {
@@ -77,10 +77,10 @@ class QuasarzoneMobileCrawler(BaseCrawler):
                     "view": _view_tag.text.strip(),
                     "price": _price_tag.text.strip(),
                     "delivery": delivery
-                },
-                "message": {}
+                }
             }
         return data
+
 
 class QuasarzoneCrawler(BaseCrawler):
     async def parsing(self, html: str) -> Dict[int, BaseArticle]:
@@ -144,6 +144,7 @@ class QuasarzoneCrawler(BaseCrawler):
                 "site_name": "퀘이사존",
                 "board_name": board_name,
                 "writer_name": _nick_tag.text.strip(),
+                "crawler_name": self.name,
                 "url": f"https://quasarzone.com/bbs/{_board_id}/views/{_id}",
                 "is_end": is_end,
                 "extra": {
@@ -151,7 +152,6 @@ class QuasarzoneCrawler(BaseCrawler):
                     "view": _view_tag.text.strip(),
                     "price": _price_tag.text.strip(),
                     "delivery": delivery
-                },
-                "message": {}
+                }
             }
         return data

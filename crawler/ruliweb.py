@@ -1,8 +1,7 @@
 # 유저 예판 핫딜 뽐뿌 게시판 https://bbs.ruliweb.com/market/board/1020
-import asyncio
 import re
-from typing import Dict
 from bs4 import BeautifulSoup, NavigableString
+from typing import Dict
 
 from .base_crawler import BaseCrawler, BaseArticle
 
@@ -54,13 +53,13 @@ class RuliwebCrawler(BaseCrawler):
                 "site_name": "루리웹",
                 "board_name": board_name,
                 "writer_name": _writer_tag.text.strip(),
+                "crawler_name": self.name,
                 "url": f"https://bbs.ruliweb.com/market/board/1020/read/{_id}",
                 "is_end": False,
                 "extra": {
                     "recommend": _recommend_tag.text,
                     "view": _view_tag.text,
-                },
-                "message": {}
+                }
             }
             # 제목에 ["품절", "종료", "매진", "마감"] 네 단어가 들어간 경우 핫딜이 종료된 것으로 판단
             for kw in ["품절", "종료", "매진", "마감"]:

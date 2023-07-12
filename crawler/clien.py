@@ -1,7 +1,6 @@
 # 클리앙 알들구매 게시판 https://www.clien.net/service/board/jirum
-import asyncio
-from typing import Dict
 from bs4 import BeautifulSoup
+from typing import Dict
 
 from .base_crawler import BaseCrawler, BaseArticle
 
@@ -47,12 +46,12 @@ class ClienCrawler(BaseCrawler):
                 "site_name": "클리앙",
                 "board_name": board_name,
                 "writer_name": _writer_tag.text.strip(),
+                "crawler_name": self.name,
                 "url": f"https://www.clien.net/service/board/{board_url}/{_id}",
                 "is_end": "sold_out" in row["class"],
                 "extra": {
                     "recommend": _recommend,
                     "view": _view_tag.text
                 },
-                "message": {}
             }
         return data

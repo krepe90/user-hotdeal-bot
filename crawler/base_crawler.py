@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Any, Dict, List, Optional, TypedDict, Union
+from typing import Any, Dict, List, Optional, TypedDict, Union, Self
 import aiohttp
 import logging
 
@@ -15,26 +15,51 @@ class BaseArticle(TypedDict):
     site_name: str              # 커뮤니티 사이트 이름
     board_name: str             # 게시판 이름
     writer_name: str            # 작성자 이름 (닉네임)
+    crawler_name: str           # 크롤러 (객체) 이름
     url: str                    # 게시글 URL
     is_end: bool                # 핫딜 종료 여부
-    extra: Dict[str, Any]       # 기타 데이터 저장용
-    message: Dict[str, Any]     # 각 메시지 전송 채널별 메시지 객체
+    extra: dict[str, Any]       # 기타 데이터 저장용
+
+
+class ArticleCollection(dict[int, BaseArticle]):
+    def __init__(self, data: dict[int, BaseArticle] = {}):
+        for k, v in data.items():
+            self[k] = v
+
+    def __setitem__(self, __key: Union[int, str], __value: BaseArticle) -> None:
+        return super().__setitem__(int(__key), __value)
+
+    def __getitem__(self, __key: int) -> BaseArticle:
+        return super().__getitem__(__key)
+
+    def __sub__(self, b: Self) -> Self:
+        return ArticleCollection({k: v for k, v in self.items() if k not in b})
+
+    def remove_expired(self, i: int) -> None:
+        # {n: m for n, m in self.article_cache[name].items() if n >= id_min}
+        remove_list = [k for k in self.keys() if k < i]
+        for k in remove_list:
+            self.pop(k)
+
+    def get_new(self, i: int) -> "ArticleCollection":
+        return ArticleCollection({k: v for k, v in self.items() if k > i})
 
 
 class BaseCrawler(metaclass=ABCMeta):
-    def __init__(self, url_list: List[str], session: Optional[aiohttp.ClientSession] = None) -> None:
+    def __init__(self, name: str, url_list: List[str], session: Optional[aiohttp.ClientSession] = None) -> None:
         self.session: aiohttp.ClientSession = session if session is not None else aiohttp.ClientSession(trust_env=True)
         self.url_list: List[str] = url_list
+        self.name = name
         self.logger = logging.getLogger(f"crawler.{self.__class__.__name__}")
         self._prev_status = 200
 
-    async def get(self) -> Dict[int, BaseArticle]:
+    async def get(self) -> ArticleCollection:
         html_list: List[str] = []
         for url in self.url_list:
             if (html := await self.request(url)):
                 html_list.append(html)
 
-        data: Dict[int, BaseArticle] = {}
+        data = ArticleCollection()
         for html in html_list:
             data.update(await self.parsing(html))
 

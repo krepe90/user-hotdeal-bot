@@ -1,10 +1,9 @@
 # 아카라이브 핫딜 채널
 # https://arca.live/b/hotdeal
 # API 문서화되면 전환 예정
-import asyncio
 import re
-from typing import Dict
 from bs4 import BeautifulSoup
+from typing import Dict
 
 from .base_crawler import BaseCrawler, BaseArticle
 
@@ -17,7 +16,6 @@ class ArcaLiveCrawler(BaseCrawler):
         if (_board_name := soup.select_one(".board-title .title")) is None or (board_name := _board_name.attrs.get("data-channel-name")) is None:
             self.logger.error("Can't find board name, skip parsing")
             return {}
-        
 
         # 게시글 목록
         if (table := soup.select_one(".list-table")) is None:
@@ -70,6 +68,7 @@ class ArcaLiveCrawler(BaseCrawler):
                 "site_name": "아카라이브",
                 "board_name": board_name,
                 "writer_name": _writer_tag.text.strip(),
+                "crawler_name": self.name,
                 "url": f"https://arca.live/b/{_board_id}/{_id}",
                 "is_end": is_end,
                 "extra": {
@@ -78,6 +77,5 @@ class ArcaLiveCrawler(BaseCrawler):
                     "price": _price_tag.text.strip(),
                     "delivery": [_delivery_tag.text.strip()]
                 },
-                "message": {}
             }
         return data
