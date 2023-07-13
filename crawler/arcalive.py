@@ -34,7 +34,7 @@ class ArcaLiveCrawler(BaseCrawler):
                 continue
             else:
                 title = "".join(_title).strip()
-            if (_url := _title_tag.attrs.get("href")) is None or (re_id := re.match(r"\/b\/([\w\d]+)\/(\d+)\??.+", _url)) is None:
+            if (_url := _title_tag.attrs.get("href")) is None or (re_id := re.match(r"\/b\/([\w\d]+)\/(\d+)\??.*", _url)) is None:
                 self.logger.warning("Cannot parse article url")
                 continue
             else:

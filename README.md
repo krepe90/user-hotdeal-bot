@@ -38,18 +38,13 @@
 ## How to use
 - Requirements:
   - Python>=3.11
-  - aiohttp, beautifulsoup4, python-telegram-bot >= 20.1
+  - aiohttp, beautifulsoup4
+  - python-telegram-bot >= 20.1
 - config
   - config.json
-    - 현재는 텔레그램 봇의 토큰을 저장하는 용도로만 사용
-      ```json
-      {
-        "telegram": {
-          "token": "TELEGRAM_API_TOKEN",
-          "target": "CHAT_ID_OR_CHANNEL_NAME"
-        }
-      }
-      ```
+    - 크롤러 및 메시지 전송 봇 목록 저장.
+    - [config.json.example](/config.json.example) 파일 참조.
+    - `crawler_name`, `bot_name` 에 적는 클래스 이름은 각각 [crawler](/crawler/__init__.py), [bot](/bot.py) 모듈에 임포트되어있어야 함.
   - config_logger.json
     - `logging.config.dictConfig()` 참조 [(로깅 요리책: Logging cookbook)](https://docs.python.org/ko/3/howto/logging-cookbook.html#customizing-handlers-with-dictconfig)
     - logger 종류
@@ -75,8 +70,6 @@
 2. 봇 객체 `queue` 속성에 `tuple[str, BaseArcile]` 형태로 작업을 등록.
 3. 봇 객체 생성시부터 작동을 시작한 `consumer` 메서드에서 큐로부터 작업을 받아 전송/수정/삭제 작업을 수행.
 4. 각 작업은 상속받은 각 구현 봇 클래스의 `_send`, `_edit`, `_delete` 메서드를 호출해 수행.
-5. (고민중) 메시지 전송이 실패한 경우, 다시 큐에 담는 것을 어떻게 구현할 지 생각해보기.
-
 
 ## TODO List
 
@@ -90,11 +83,11 @@
 - [x] [퀘이사존 지름/핫딜정보](https://quasarzone.com/bbs/qb_saleinfo) 추가
 - [x] 게시글 캐시 덤프/로드 기능
 - [x] 카테고리 정보 파싱 추가
-- [ ] 크롤러, 봇 목록도 json으로부터 불러오기
+- [x] 크롤러, 봇 목록도 json으로부터 불러오기
 - [ ] systemctl reload 시그널(아마도 `signal.SIG_HUP`) 대응
   - [ ] `BotManager.reload` 메소드 작성
 - [ ] docstring 작성
-- [ ] Telegram bot 메시지 전송도 비동기적인 코드로 전환
+- [x] Telegram bot 메시지 전송도 비동기적인 코드로 전환
 - [ ] 개별 사이트 점검중일때의 대응 추가 (진행중)
 - [ ] 게시글 추천수 보여주기 (진행중)
 - [ ] **테스트 코드 작성**

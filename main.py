@@ -15,7 +15,7 @@ import bot
 import util
 
 
-__version__ = "v2.0.0"
+__version__ = "2.0.0"
 
 
 HEADERS = {
@@ -241,7 +241,7 @@ class BotManager:
         for article in result["remove"]:
             self.article_cache[name].pop(article["article_id"], None)
             for bot_name, bot in self.bots.items():
-                bot.remove_msg_obj(name, article["article_id"])
+                await bot.remove_msg_obj(name, article["article_id"])
         return result
 
     async def crawling(self) -> CrawlingResult:
