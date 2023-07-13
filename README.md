@@ -37,8 +37,8 @@
 
 ## How to use
 - Requirements:
-  - Python 3.9 +
-  - aiohttp, beautifulsoup4, python-telegram-bot
+  - Python>=3.11
+  - aiohttp, beautifulsoup4, python-telegram-bot >= 20.1
 - config
   - config.json
     - 현재는 텔레그램 봇의 토큰을 저장하는 용도로만 사용
@@ -60,6 +60,22 @@
     - handler
       - [util.TelegramHandler](util.py#L11): `logging.handlers.HTTPHandler`를 상속해 간단히 만든 텔레그램 핸들러
 
+
+## 구현 방식
+
+### 크롤링
+1. 각 크롤러 객체로부터 `ArticleCollection` 객체를 반환받음.
+2. 직전 크롤링 작업시 받아왔던 (또는 앱 시작 시 역직렬화 했던) `ArticleCollection` 객체와 비교
+3. 이후 `new`, `update`, `delete` 세가지 종류로 변경사항을 분류하여 `CrawlingResult` 객체로 묶음.
+4. 만료된 (더이상 추적하지 않는) 게시글들을 메모리에서 제거. 크롤러에서는 `BaseArticle` 객체를, 각 봇에서는 `MessageType` (각 봇 메시지 객체의 제네릭 타입) 제거.
+5. `CrawlingResult` 객체를 한데 묶어서 반환.
+
+### 메시지 전송/수정/삭제
+1. 새로 올라온 게시글, 수정된 게시글, 삭제된 게시글의 리스트들을 받음. (`list[BaseArticle]`)
+2. 봇 객체 `queue` 속성에 `tuple[str, BaseArcile]` 형태로 작업을 등록.
+3. 봇 객체 생성시부터 작동을 시작한 `consumer` 메서드에서 큐로부터 작업을 받아 전송/수정/삭제 작업을 수행.
+4. 각 작업은 상속받은 각 구현 봇 클래스의 `_send`, `_edit`, `_delete` 메서드를 호출해 수행.
+5. (고민중) 메시지 전송이 실패한 경우, 다시 큐에 담는 것을 어떻게 구현할 지 생각해보기.
 
 
 ## TODO List

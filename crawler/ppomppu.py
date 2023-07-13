@@ -1,11 +1,9 @@
 # 뽐뿌 게시판 https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu
 # 해외뽐뿌 게시판 https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu4
-import asyncio
-from html import unescape
 import re
-from typing import Dict
 from bs4 import BeautifulSoup
-import xml.etree.ElementTree as ElementTree
+from typing import Dict
+from xml.etree import ElementTree
 
 from .base_crawler import BaseCrawler, BaseArticle
 
@@ -61,13 +59,13 @@ class PpomppuCrawler(BaseCrawler):
                 "site_name": "뽐뿌",
                 "board_name": board_name,
                 "writer_name": _writer_tag.text.strip(),
+                "crawler_name": self.name,
                 "url": f"https://www.ppomppu.co.kr/zboard/view.php?id={board_url}&no={_id}",
                 "is_end": row.select_one("font.list_title") is None,
                 "extra": {
                     "recommend": _recommend_tag.text,
                     "view": _view_tag.text,
-                },
-                "message": {}
+                }
             }
         return data
 
@@ -108,6 +106,7 @@ class PpomppuRSSCrawler(BaseCrawler):
                 "site_name": "뽐뿌",
                 "board_name": board_name,
                 "writer_name": _writer_tag.text,
+                "crawler_name": self.name,
                 "url": f"https://www.ppomppu.co.kr/zboard/view.php?id={board_url}&no={_id}",
                 "is_end": False,
                 "extra": {
@@ -115,7 +114,6 @@ class PpomppuRSSCrawler(BaseCrawler):
                     "view": view,
                     "recommend": recommend,
                     "not_recommend": not_recommend
-                },
-                "message": {}
+                }
             }
         return data
