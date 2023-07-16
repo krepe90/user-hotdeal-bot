@@ -7,13 +7,13 @@
       "enabled": true
     },
     "ppomppu_board": {
-      "url_list": ["http://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu"],
+      "url_list": ["https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu"],
       "crawler_name": "PpomppuCrawler",
       "description": "뽐뿌 뽐뿌게시판",
       "enabled": true
     },
     "ppomppu_foreign": {
-      "url_list": ["http://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu4"],
+      "url_list": ["https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu4"],
       "crawler_name": "PpomppuCrawler",
       "description": "뽐뿌 해외뽐뿌게시판",
       "enabled": true

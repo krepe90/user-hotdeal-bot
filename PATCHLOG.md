@@ -1,5 +1,15 @@
 # PATCHLOG
 
+## v2.0.1 (2023-07-17)
+- 보내진 메시지를 삭제하지 못하는 문제 수정
+  - 텔레그램 채널의 메시지를 삭제하기 전에 본 앱의 메모리에서 메시지 객체를 지워버려서 생긴 문제;;
+- 안정성 강화
+- 로깅 강화
+- [config.json.example](/config.json.example) 파일에서 뽐뿌 주소가 http로 되어있던 문제 수정.
+- 디버깅 및 테스트를 위해 `DummyBot` 및 `DummyCrawler` 구현
+  - `bot.DummyBot` 은 어딘가로 메시지를 보내지 않습니다.
+  - `crawler.DummyCrawler` 는 매 크롤링 시도마다 1개의 게시글 밀어내기/수정/삭제, 2개의 신규 게시물 등록을 구현합니다.
+
 ## v2.0.0 (2023-07-14)
 - 내부 구조 변경
   - [config.json](/config.json) 파일 구조 변경 ([README](/README.md#how-to-use) 참조)

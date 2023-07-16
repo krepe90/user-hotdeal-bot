@@ -15,7 +15,7 @@ import bot
 import util
 
 
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 
 
 HEADERS = {
@@ -240,8 +240,6 @@ class BotManager:
         # 삭제 확인된 글 객체와 메시지 객체를 메모리에서 제거
         for article in result["remove"]:
             self.article_cache[name].pop(article["article_id"], None)
-            for bot_name, bot in self.bots.items():
-                await bot.remove_msg_obj(name, article["article_id"])
         return result
 
     async def crawling(self) -> CrawlingResult:

@@ -73,7 +73,10 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
         """
         if crawler_name not in self.cache:
             return
-        self.cache[crawler_name].pop(article_id)
+        if article_id not in self.cache[crawler_name]:
+            return
+        self.logger.debug(f"Removed message object ({article_id})")
+        self.cache[crawler_name].pop(article_id, None)
 
     async def remove_expired_msg_obj(self, crawler_name: str, id_min: int):
         """id_min보다 작은 id를 가진 메시지 객체들을 삭제. 특정 시점 이전의 메시지 객체를 지울 때 사용.
@@ -83,12 +86,13 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
             id_min: 삭제할 메시지 객체의 id의 최솟값
         """
         if crawler_name not in self.cache:
+            self.logger.debug(f"Cache for {crawler_name} not found")
             return
         messages = self.cache[crawler_name]
         remove_list = [i for i in messages.keys() if i < id_min]
         for article_id in remove_list:
-            messages.pop(article_id)
-            self.logger.debug(f"Removed message object ({article_id})")
+            messages.pop(article_id, None)
+            self.logger.debug(f"Removed expired message object ({crawler_name}/{article_id})")
 
     async def consumer(self):
         item = None
@@ -181,10 +185,6 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
         for data in data_iter:
             await self.queue.put(("delete", data))
 
-    @abstractmethod
-    def _make_message(self, d: BaseArticle):
-        pass
-
     async def to_dict(self) -> SerializedBotData:
         """메시지 목록 및 작업 큐 직렬화. 만약 메시지 객체의 직렬화 및 역직렬화가 불가능하다면 value가 비어있는 딕셔너리를 반환하도록 오버라이드 할 것.
         """
@@ -210,6 +210,31 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
         await self.stop_consumer()
 
 
+class DummyBot(BaseBot):
+    def __init__(self, name: str) -> None:
+        super().__init__(name)
+
+    async def _send(self, data: BaseArticle) -> None:
+        self.logger.debug(f"Send message: {data['crawler_name']}.{data['article_id']}")
+        await self.set_msg_obj(data, data["title"])
+
+    async def _edit(self, data: BaseArticle) -> None:
+        self.logger.debug(f"Edit message: {data['crawler_name']}.{data['article_id']}")
+
+    async def _delete(self, data: BaseArticle) -> None:
+        self.logger.debug(f"Delete message: {data['crawler_name']}.{data['article_id']}")
+        await self.remove_msg_obj(data["crawler_name"], data["article_id"])
+
+    async def from_dict(self, data: SerializedBotData) -> None:
+        self.cache = {}
+        for c_name, b_data in data["cache"].items():
+            self.cache[c_name] = {}
+            for a_id, msg in b_data.items():
+                self.cache[c_name][int(a_id)] = msg
+        for job in data["queue"]:
+            await self.queue.put(job)
+
+
 class TelegramBot(BaseBot[telegram.Message]):
     def __init__(self, name: str, token: str, target: str):
         super().__init__(name)
@@ -233,6 +258,7 @@ class TelegramBot(BaseBot[telegram.Message]):
                 msg = await self._send(data, retry=False)
             if msg is not None:
                 await self.set_msg_obj(data, msg)
+            return msg
 
     async def _edit(self, data: BaseArticle, retry: bool = False):
         msg = await self.get_msg_obj(data)
