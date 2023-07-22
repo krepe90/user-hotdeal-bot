@@ -23,15 +23,25 @@ class TelegramHandler(logging.handlers.HTTPHandler):
             "ERROR": "\U0001F6AB ",
             "CRITICAL": "\U0001F6A8 "
         }
+        # formatter
+        record.message = record.getMessage()
         if self.formatter is None:
-            text = record.msg
+            text = record.message
         else:
-            text = self.formatter.format(record)
+            if self.formatter.usesTime():
+                record.asctime = self.formatter.formatTime(record, self.formatter.datefmt)
+            text = self.formatter.formatMessage(record)
         if self.emoji:
             text = _emoji_list.get(record.levelname, "") + text
 
+        escaped_text = escape_markdown(text)
+        if record.exc_info:
+            if not record.exc_text:
+                record.exc_text = self.formatter.formatException(record.exc_info)
+            escaped_text += "\n```\n" + record.exc_text + "\n```"
+
         return {
             "chat_id": self.target,
-            "text": escape_markdown(text),
+            "text": escaped_text,
             "parse_mode": self.parse_mode
         }
