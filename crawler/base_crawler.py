@@ -1,3 +1,4 @@
+import asyncio
 from abc import ABCMeta, abstractmethod
 from typing import Any, Dict, List, Optional, TypedDict, Union, Self
 import aiohttp
@@ -78,6 +79,10 @@ class BaseCrawler(metaclass=ABCMeta):
             else:
                 self.logger.error(f"Client connection error: {e} ({url})")
                 return
+        except asyncio.TimeoutError as e:
+            # ServerTimeoutError 하고 이게 뭐가 다른거지?
+            self.logger.error(f"Asyncio timeout error: {e} ({url})")
+            return
         return resp
 
     async def request(self, url: str) -> Union[str, None]:

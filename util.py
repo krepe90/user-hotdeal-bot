@@ -43,5 +43,6 @@ class TelegramHandler(logging.handlers.HTTPHandler):
         return {
             "chat_id": self.target,
             "text": escaped_text,
-            "parse_mode": self.parse_mode
+            "parse_mode": self.parse_mode,
+            "disable_web_page_preview": True
         }
