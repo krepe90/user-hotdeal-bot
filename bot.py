@@ -281,8 +281,11 @@ class TelegramBot(BaseBot[telegram.Message]):
         if msg is None:
             self.logger.warning("Message not found: {title} ({url})".format(**data))
             return
-        else:
+
+        try:
             await msg.delete()
+        except telegram.error.BadRequest as e:
+            self.logger.error("Delete message failed ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data))
 
     async def from_dict(self, data: SerializedBotData) -> None:
         """메시지 목록 및 작업 큐 역직렬화

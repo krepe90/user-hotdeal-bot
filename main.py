@@ -15,7 +15,7 @@ import bot
 import util
 
 
-__version__ = "2.0.2"
+__version__ = "2.0.4"
 
 
 HEADERS = {
