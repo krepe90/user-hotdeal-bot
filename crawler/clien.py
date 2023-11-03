@@ -16,7 +16,7 @@ class ClienCrawler(BaseCrawler):
         if (_board_url := soup.select_one("input#boardCd")) is None:
             self.logger.error("Can't find board url.")
             return data
-        rows = soup.select(".contents_jirum > .list_item.jirum")
+        rows = soup.select(".list_content > .contents_jirum > .list_item.jirum")
         board_name = _board_name.attrs["value"]
         board_url = _board_url.attrs["value"]
 
@@ -36,7 +36,10 @@ class ClienCrawler(BaseCrawler):
             if (_category_tag := row.select_one(".icon_keyword")) is None or not _category_tag.text:
                 self.logger.warning("Cannot get category tag")
                 continue
-            _id = int(row.attrs["data-board-sn"])
+            _id = int(row.attrs.get("data-board-sn"))
+            if _id is None:
+                self.logger.warning("Cannot get article id")
+                continue
             _recommend_tag = row.select_one(".list_votes")
             _recommend = _recommend_tag.text.strip() if _recommend_tag else "0"
             data[_id] = {
