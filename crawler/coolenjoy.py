@@ -19,7 +19,11 @@ class CoolenjoyRSSCrawler(BaseCrawler):
     ns = {"dc": "http://purl.org/dc/elements/1.1/"}
 
     async def parsing(self, html: str) -> Dict[int, BaseArticle]:
-        tree = ElementTree.fromstring(html)
+        try:
+            tree = ElementTree.fromstring(html)
+        except ElementTree.ParseError:
+            self.logger.error("Failed to parse XML.")
+            return {}
         if (_board_name := tree.find("./channel/title")) is None or _board_name.text is None:
             self.logger.error("Can't find board name.")
             return {}
