@@ -32,8 +32,10 @@ class SerializedBotData(TypedDict, Generic[MessageType]):
 
 
 class BaseBot(Generic[MessageType], metaclass=ABCMeta):
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, **kwargs) -> None:
         self.name = name
+        self.cls_name = self.__class__.__name__
+        self.config = kwargs
         self.logger = logging.getLogger(f"bot.{self.__class__.__name__}")
         self.cache: dict[str, dict[int, MessageType]] = dict()
         self.queue: asyncio.Queue[tuple[Literal["send", "edit", "delete"], BaseArticle]] = asyncio.Queue()
@@ -138,9 +140,10 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
             self.logger.warning("Consumer task is not finished in 5 secs")
             self.consumer_task.cancel()
 
-    async def check_consumer(self):
+    async def check_consumer(self, no_warning: bool = False):
         if self.consumer_task is None or self.consumer_task.done():
-            self.logger.warning("Consumer task stopped. Restarting...")
+            if not no_warning:
+                self.logger.warning("Consumer task stopped. Restarting...")
             await self.run_consumer()
 
     @abstractmethod
@@ -237,7 +240,7 @@ class DummyBot(BaseBot):
 
 class TelegramBot(BaseBot[telegram.Message]):
     def __init__(self, name: str, token: str, target: str):
-        super().__init__(name)
+        super().__init__(name, token=token, target=target)
         self.bot = telegram.Bot(token)
         self.target = target
 
@@ -296,7 +299,7 @@ class TelegramBot(BaseBot[telegram.Message]):
         # cache
         for crawler_name, msg_data in data["cache"].items():
             if crawler_name not in self.cache:
-                self.cache[crawler_name]: dict[int, MessageType] = {}
+                self.cache[crawler_name] = {}
             for msg_id, msg in msg_data.items():
                 self.cache[crawler_name][int(msg_id)] = telegram.Message.de_json(msg, self.bot)
         # queue
