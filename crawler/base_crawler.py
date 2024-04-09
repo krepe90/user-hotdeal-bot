@@ -1,5 +1,7 @@
 import asyncio
 from abc import ABCMeta, abstractmethod
+import os
+import datetime
 from typing import Any, Dict, List, Optional, TypedDict, Union, Self
 import aiohttp
 import logging
@@ -93,6 +95,7 @@ class BaseCrawler(metaclass=ABCMeta):
             if resp.status != 200:
                 if resp.status != self._prev_status:
                     self.logger.error(f"Client response error: {resp.status} ({url})")
+                    await self.dump_http_response(resp)
                 else:
                     self.logger.info(f"Client response error [skip]: {resp.status} ({url})")
                 self._prev_status = resp.status
@@ -116,3 +119,11 @@ class BaseCrawler(metaclass=ABCMeta):
 
     async def close(self):
         await self.session.close()
+
+    async def dump_http_response(self, resp: aiohttp.ClientResponse) -> None:
+        current_datetime = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = os.path.join("error", f"{current_datetime}_{self.name}.html")
+
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(await resp.text())
+            self.logger.debug(f"Dumped response html to {filename}")

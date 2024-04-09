@@ -25,7 +25,7 @@
   - RSS 크롤러가 구현되어 있으나, 사용하지 않습니다.
 - [클리앙 - 알뜰구매](https://www.clien.net/service/board/jirum)
 - [쿨앤조이 - 지름, 알뜰정보](https://coolenjoy.net/bbs/jirum)
-  - RSS 사용 [(링크)](https://coolenjoy.net/rss?bo_table=jirum)
+  - RSS 사용 [(링크)](https://coolenjoy.net/bbs/rss.php?bo_table=jirum)
 - [퀘이사존 - 지름/할인정보](https://quasarzone.com/bbs/qb_saleinfo)
 - [아카라이브 - 핫딜 채널](https://arca.live/b/hotdeal)
 
