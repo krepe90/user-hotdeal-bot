@@ -84,8 +84,8 @@
 - [x] 게시글 캐시 덤프/로드 기능
 - [x] 카테고리 정보 파싱 추가
 - [x] 크롤러, 봇 목록도 json으로부터 불러오기
-- [ ] systemctl reload 시그널(아마도 `signal.SIG_HUP`) 대응
-  - [ ] `BotManager.reload` 메소드 작성
+- [x] systemctl reload 시그널(아마도 `signal.SIG_HUP`) 대응
+  - [x] `BotManager.reload` 메소드 작성
 - [ ] docstring 작성
 - [x] Telegram bot 메시지 전송도 비동기적인 코드로 전환
 - [ ] 개별 사이트 점검중일때의 대응 추가 (진행중)
@@ -97,3 +97,8 @@
 - [ ] 자꾸 이상하게 발생하는 timeout exception 제대로 처리하도록 만들기. 더 나아가서는 문제 원인 파악도.
 - [ ] 텔레그램 로깅에서 동일 로그 메시지에 대한 처리 방식 개선... 이 가능할 지는 모르겠음.
 - [ ] 일간 통계 기능 제공 등...
+- [ ] Asyncio Lock 또는 유사한 기능 추가
+- [ ] disabled: true 상태인 크롤러/봇도 초기화는 하도록 변경
+  - [ ] 크롤러/봇에 disabled 상태 추가
+  - [ ] disabled 상태인 크롤러 및 봇은 작동하지 않게 변경
+- [ ] 실시간 봇 정보 모니터링 기능 추가 (텔레그램 메신저) - pid, 활성화된 크롤러 및 봇 목록, 최근 크롤러 상태 등
