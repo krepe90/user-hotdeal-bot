@@ -1,4 +1,5 @@
 # 유저 예판 핫딜 뽐뿌 게시판 https://bbs.ruliweb.com/market/board/1020
+# 유저 예판 핫딜 뽐뿌 게시판 (RSS) https://bbs.ruliweb.com/market/board/1020/rss
 import re
 from bs4 import BeautifulSoup, NavigableString
 from typing import Dict
@@ -35,7 +36,7 @@ class RuliwebCrawler(BaseCrawler):
             else:
                 category = _re_title.group(1)
                 title = _re_title.group(2)
-            if (_writer_tag := row.select_one(".nick")) is None:
+            if (_writer_tag := row.select_one(".nick a")) is None:
                 self.logger.warning("Cannot get writer tag")
                 continue
             if (_recommend_tag := row.select_one(".recomd > strong")) is None:

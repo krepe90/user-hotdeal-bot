@@ -22,7 +22,7 @@ class PpomppuCrawler(BaseCrawler):
             return {}
         board_name = _board_name.text.strip()
         board_url = _board_url.attrs["value"]
-        rows = table.select("tr.common-list0, tr.common-list1")
+        rows = table.select(".baseList.bbs_new1")
 
         data: Dict[int, BaseArticle] = {}
         for row in rows:
@@ -32,25 +32,29 @@ class PpomppuCrawler(BaseCrawler):
             if not _id_tag.text.strip().isnumeric():
                 # ID가 있는 게시글만 가져올 것이기 때문에 로깅 필요 X
                 continue
-            if (_title_tag := row.select_one("font")) is None:
+            if (_title_tag := row.select_one(".baseList-title")) is None:
                 self.logger.warning("Cannot get article title tag")
                 continue
-            if (_writer_tag := row.select_one(".list_name")) is None:
+            if (_writer_tag := row.select_one("a.baseList-name")) is None:
                 self.logger.warning("Cannot get article wrtier tag")
                 continue
-            if (_recommend_tag := row.select_one("td:nth-child(5)")) is None:
+            if (_writer_tag_inner := _writer_tag.select_one("span,img")) is None:
+                self.logger.warning("Cannot get article writer")
+                continue
+            if (_recommend_tag := row.select_one(".baseList-rec")) is None:
                 self.logger.warning("Cannot get article recommend tag")
                 continue
-            if (_view_tag := row.select_one("td:nth-child(6)")) is None:
+            if (_view_tag := row.select_one(".baseList-views")) is None:
                 self.logger.warning("Cannot get article view count tag")
                 continue
-            if (_category_tag := row.select_one("td:nth-child(3) tr td div > *:nth-last-child(1)")) is None or not _category_tag.text:
+            if (_category_tag := row.select_one(".baseList-box .baseList-small")) is None or not _category_tag.text:
                 # 뽐뿌게시판 분류 삭제(?) 대응
                 # self.logger.warning("Cannot get category tag")
                 category_tag = ""
             else:
                 category_tag = _category_tag.text.strip(" []")
             _id = int(_id_tag.text.strip())
+            writer = _writer_tag_inner.text.strip() if _writer_tag_inner.name == "span" else _writer_tag_inner.attrs["alt"]
             # 게시글 번호가 없는 경우 (== 다른 게시판 글인 경우) 스킵
             data[_id] = {
                 "article_id": _id,
@@ -58,10 +62,10 @@ class PpomppuCrawler(BaseCrawler):
                 "category": category_tag,
                 "site_name": "뽐뿌",
                 "board_name": board_name,
-                "writer_name": _writer_tag.text.strip(),
+                "writer_name": writer,
                 "crawler_name": self.name,
                 "url": f"https://www.ppomppu.co.kr/zboard/view.php?id={board_url}&no={_id}",
-                "is_end": row.select_one("font.list_title") is None,
+                "is_end": row.select_one(".baseList-title.end2") is None,
                 "extra": {
                     "recommend": _recommend_tag.text,
                     "view": _view_tag.text,
