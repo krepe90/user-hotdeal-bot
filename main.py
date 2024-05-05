@@ -273,13 +273,15 @@ class BotManager:
                 continue
 
             new_article = recent_data[article_id]
-            # 메시지 업데이트가 필요한 경우 (품절, 제목 변경)
+            # 메시지 업데이트가 필요한 경우 (품절, 제목 변경, 가격 변경 등)
             if article["is_end"] != new_article["is_end"]:
                 # self.logger.debug("Status update detected: {title} ({url}) -> {status}".format(status=new_article["is_end"], **article))
                 result["update"].append(article)
             elif article["title"] != new_article["title"]:
                 # crawling 메서드의 로깅과 중복돼서 주석 처리
                 # self.logger.debug("Title update detect: {title} ({url}) -> {new_title}".format(new_title=new_article["title"], **article))
+                result["update"].append(article)
+            elif article.get("extra") and article["extra"].get("price") != new_article.get("extra", {}).get("price"):
                 result["update"].append(article)
             article.update(new_article)
 
