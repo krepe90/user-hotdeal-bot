@@ -52,6 +52,7 @@ class BaseCrawler(metaclass=ABCMeta):
     def __init__(self, name: str, url_list: List[str], session: Optional[aiohttp.ClientSession] = None) -> None:
         self.session: aiohttp.ClientSession = session if session is not None else aiohttp.ClientSession(trust_env=True)
         self.url_list: List[str] = url_list
+        self.cls_name = self.__class__.__name__
         self.name = name
         self.logger = logging.getLogger(f"crawler.{self.__class__.__name__}")
         self._prev_status = 200

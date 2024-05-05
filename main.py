@@ -83,23 +83,43 @@ class BotManager:
         # self.article_cache: dict[str, crawler.ArticleCollection] = {k: crawler.ArticleCollection() for k in self.crawlers.keys()}
         await self.load()
 
-    async def load_crawlers(self, crawlers: dict[str, CrawlerConfig]):
+    async def init_crawlers(self, crawlers: dict[str, CrawlerConfig]):
         self.logger.info("Crawler initialize start")
+        _crawlers_old = self.crawlers
+        self.crawlers = {}
         for crawler_name, crawler_config in crawlers.items():
+            # 활성화 여부 확인
+            if not crawler_config["enabled"]:
+                self.logger.info(f"Crawler disabled: {crawler_name}")
+                continue
+            if crawler_name in _crawlers_old:
+                _cwr = _crawlers_old.pop(crawler_name)
+                # 설정이 동일한 경우 재사용
+                if (_cwr.url_list == crawler_config["url_list"] and
+                    _cwr.cls_name == crawler_config["crawler_name"]):
+                    self.crawlers[crawler_name] = _cwr
+                    self.logger.info(f"Crawler reused: {crawler_name} ({crawler_config['crawler_name']})")
+                    continue
+                # 설정이 달라진 경우 새로 생성
+                else:
+                    self.logger.info(f"Config changed: {crawler_name}")
             crawler_cls_name = crawler_config["crawler_name"]
             crawler_cls = getattr(crawler, crawler_cls_name, None)
             if not issubclass(crawler_cls, crawler.BaseCrawler):
                 self.logger.warning(f"Invalid crawler class: {crawler_cls_name}")
                 continue
-            if not crawler_config["enabled"]:
-                self.logger.info(f"Crawler disabled: {crawler_name}")
-                continue
+            # 크롤러 객체 생성
             self.crawlers[crawler_name] = crawler_cls(crawler_name, crawler_config["url_list"], self.session)
             self.logger.info(f"Crawler initialized: {crawler_name} ({crawler_cls_name})")
+        # 남은 크롤러 객체 목록 출력 (삭제될 크롤러)
+        for k, v in _crawlers_old.items():
+            # GC가 알아서 할테니 별도 처리는 X (세션은 다 같이 쓰고 있기 떄문에 닫으면 안됨)
+            self.logger.info(f"Crawler removed or disabled: {k} ({v.cls_name})")
         self.logger.info(f"{len(self.crawlers)} crawler(s) initialized")
 
-    async def load_bots(self, bots: dict[str, BotConfig]):
+    async def init_bots(self, bots: dict[str, BotConfig]):
         self.logger.info("Bot initialize start")
+        _bots_old, self.bots = self.bots, {}
         for bot_name, bot_config in bots.items():
             bot_cls_name = bot_config["bot_name"]
             bot_cls = getattr(bot, bot_cls_name, None)
@@ -109,8 +129,26 @@ class BotManager:
             if not bot_config["enabled"]:
                 self.logger.info(f"Bot disabled: {bot_name}")
                 continue
+            if bot_name in _bots_old:
+                _bot = _bots_old.pop(bot_name)
+                # 설정까지 동일한 경우 재사용
+                if (_bot.cls_name == bot_cls_name and
+                    _bot.config == bot_config["kwargs"]):
+                    self.bots[bot_name] = _bot
+                    self.logger.info(f"Bot reused: {bot_name} ({bot_cls_name})")
+                    # 봇 consumer task 재시작
+                    await _bot.check_consumer(no_warning=True)
+                    continue
+                # 설정이 바뀐 경우
+                else:
+                    _bot.close()
+                    self.logger.info(f"Config changed: {bot_name}")
             self.bots[bot_name] = bot_cls(name=bot_name, **bot_config["kwargs"])
             self.logger.info(f"Bot initialized: {bot_name} ({bot_cls_name})")
+        # 기존 봇 객체들 삭제
+        for bot_name, bot_obj in _bots_old.items():
+            await bot_obj.close()
+            self.logger.info(f"Bot removed or disabled: {bot_name} ({bot_obj.cls_name})")
         self.logger.info(f"{len(self.bots)} bot(s) initialized")
 
     async def deserialize_articles(self, crawler_data: dict[str, crawler.ArticleCollection]):
@@ -144,6 +182,11 @@ class BotManager:
         self.logger.info("Bot dump data deserialize complete")
 
     async def load(self, config_file_path: str = "config.json", dump_file_path: str = "dump.json"):
+        # 설정 및 데이터 로드
+        await self.load_config(config_file_path)
+        await self.load_data(dump_file_path)
+    
+    async def load_config(self, config_file_path: str = "config.json"):
         # config.json 파일 읽기
         if not os.path.isfile(config_file_path):
             self.logger.error("Config file doesn't exists")
@@ -154,23 +197,24 @@ class BotManager:
         except json.JSONDecodeError as e:
             self.logger.error("Config JSON file decode error occured")
             return
-        # dump.json 파일 읽기
+        # 크롤러 초기화
+        await self.init_crawlers(config["crawlers"])
+        # 메신저 봇 초기화
+        await self.init_bots(config["bots"])
+    
+    async def load_data(self, dump_file_path: str = "dump.json"):
         if not os.path.isfile(dump_file_path):
             self.logger.warning("Dump file doesn't exists")
-            data: DumpedData = {"version": __version__, "crawler": {}, "bot": {}}
-        else:
-            try:
-                with open(dump_file_path, "r", encoding="utf-8") as f:
-                    data: DumpedData = json.load(f)
-            except json.JSONDecodeError as e:
-                self.logger.error("Dump JSON file decode error occured")
-                return
+            return
+        try:
+            with open(dump_file_path, "r", encoding="utf-8") as f:
+                data: DumpedData = json.load(f)
+        except json.JSONDecodeError as e:
+            self.logger.error("Dump JSON file decode error occured")
+            return
 
         self.logger.info(f"App version {__version__}, dump file version {data['version']}")
-        # 크롤러 초기화
-        await self.load_crawlers(config["crawlers"])
-        # 메신저 봇 초기화
-        await self.load_bots(config["bots"])
+
         # 크롤러가 파싱했던 게시글 정보 불러오기
         await self.deserialize_articles(data["crawler"])
         # 봇 정보 및 봇이 보냈던/보내야 할 메시지 정보 불러오기
@@ -204,6 +248,8 @@ class BotManager:
         self.logger.debug(f"{cwr.__class__.__name__}: article_id range: [{id_min}, {max(recent_data.keys())}]")
 
         # 초기화
+        if name not in self.article_cache:
+            self.article_cache[name] = crawler.ArticleCollection()
         if not self.article_cache[name]:
             self.article_cache[name].update(recent_data)
             self.logger.info(f"{cwr.__class__.__name__}: Article cache initialized, skip crawling")
@@ -317,6 +363,13 @@ class BotManager:
         await self.dump()
         self.logger.info("session close / data dump end")
 
+    async def reload(self):
+        self.logger.info("Reload start")
+        # 데이터 저장
+        await self.dump()
+        # config.json 파일 다시 읽어서 크롤러, 봇 초기화
+        await self.load_config()
+
 
 async def shutdown(sig: signal.Signals, bot: BotManager):
     logger_status.info(f"Received exit signal {sig.name}")
@@ -330,14 +383,20 @@ async def shutdown(sig: signal.Signals, bot: BotManager):
     loop.stop()
 
 
+async def reload(sig: signal.Signals, bot: BotManager):
+    logger_status.info(f"Received reload signal {sig.name}")
+    await bot.reload()
+
+
 def main():
     loop = asyncio.get_event_loop()
     bot = BotManager()
     if sys.platform != "win32":
-        signals = (signal.SIGTERM, signal.SIGINT)
-        for sig in signals:
-            loop.add_signal_handler(sig, lambda sig=sig: asyncio.create_task(shutdown(sig, bot)))
-            # loop.add_signal_handler(sig, functools.partial(asyncio.create_task, shutdown(sig, bot)))
+        # shutdown (SIGTERM, SIGINT)
+        loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(shutdown(signal.SIGTERM, bot)))
+        loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(shutdown(signal.SIGINT, bot)))
+        # reload (SIGHUP)
+        loop.add_signal_handler(signal.SIGHUP, lambda: asyncio.create_task(reload(signal.SIGHUP, bot)))
 
     logger_status.info(f"hotdeal bot v{__version__} start!! (PID: {os.getpid()})")
     try:
