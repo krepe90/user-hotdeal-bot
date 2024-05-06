@@ -125,6 +125,9 @@ class BaseCrawler(metaclass=ABCMeta):
         current_datetime = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = os.path.join("error", f"{current_datetime}_{self.name}.html")
 
+        if not os.path.exists("error"):
+            os.makedirs("error")
+
         with open(filename, "w", encoding="utf-8") as f:
             f.write(await resp.text())
             self.logger.debug(f"Dumped response html to {filename}")
