@@ -391,7 +391,7 @@ async def reload(sig: signal.Signals, bot: BotManager):
 
 
 def main():
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
     bot = BotManager()
     if sys.platform != "win32":
         # shutdown (SIGTERM, SIGINT)
