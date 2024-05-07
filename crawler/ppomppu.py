@@ -65,7 +65,7 @@ class PpomppuCrawler(BaseCrawler):
                 "writer_name": writer,
                 "crawler_name": self.name,
                 "url": f"https://www.ppomppu.co.kr/zboard/view.php?id={board_url}&no={_id}",
-                "is_end": row.select_one(".baseList-title.end2") is None,
+                "is_end": row.select_one(".baseList-title.end2") is not None,
                 "extra": {
                     "recommend": _recommend_tag.text,
                     "view": _view_tag.text,
