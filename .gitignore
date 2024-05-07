@@ -136,3 +136,4 @@ config.json
 config_logger.json
 dump.json
 log/
+error/

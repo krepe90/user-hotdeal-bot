@@ -110,7 +110,8 @@ class BaseCrawler(metaclass=ABCMeta):
                     encoding = "cp949"
                 html = await resp.text(encoding=encoding)
             except Exception as e:
-                self.logger.exception("Cannot get response html string")
+                await self.dump_http_response(resp)
+                self.logger.error("Cannot get response html string: {e}", e=e)
                 return
         return html
 
@@ -128,6 +129,6 @@ class BaseCrawler(metaclass=ABCMeta):
         if not os.path.exists("error"):
             os.makedirs("error")
 
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(await resp.text())
-            self.logger.debug(f"Dumped response html to {filename}")
+        with open(filename, "wb") as f:
+            f.write(await resp.read())
+            self.logger.debug(f"Dumped response binary to {filename}")
