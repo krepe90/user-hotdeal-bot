@@ -106,7 +106,7 @@ class BaseCrawler(metaclass=ABCMeta):
 
             try:
                 await resp.read()
-                if (encoding := resp.get_encoding()) == "euc-kr":
+                if (encoding := resp.get_encoding()) in ("euc-kr", "euc_kr"):
                     encoding = "cp949"
                 html = await resp.text(encoding=encoding)
             except Exception as e:
