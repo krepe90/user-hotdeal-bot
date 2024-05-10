@@ -254,6 +254,8 @@ class TelegramBot(BaseBot[telegram.Message]):
             self.logger.warning("Retry send message after {t} secs: ({e}): {title} ({url}) -> {target}".format(e=e, t=e.retry_after, target=self.target, **data))
             await asyncio.sleep(e.retry_after)
             msg = await self._send(data, retry=False)
+        except telegram.error.TimedOut as e:
+            self.logger.error("Send message timeout ({e}): {title} ({url}) -> {target}".format(e=e, target=self.target, **data))
         except telegram.error.TelegramError as e:
             self.logger.error("Send message failed: {e.__name__} ({e}): {title} ({url}) -> {target}".format(e=e, target=self.target, **data))
         finally:
@@ -275,8 +277,12 @@ class TelegramBot(BaseBot[telegram.Message]):
             self.logger.warning("Retry edit message after {t} secs: ({e}): {title} ({url}) <- {msg_id}".format(e=e, t=e.retry_after, msg_id=msg.message_id, **data))
             await asyncio.sleep(e.retry_after)
             await self._edit(data, retry=False)
+        except telegram.error.TimedOut as e:
+            self.logger.error("Edit message timeout ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data))
         except telegram.error.BadRequest as e:
             self.logger.error("Edit message failed ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data))
+        except telegram.error.TelegramError as e:
+            self.logger.error("Edit message failed: {e.__name__} ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data))
 
     async def _delete(self, data: BaseArticle):
         """메시지 객체를 찾은 다음, 텔레그램 채널의 메시지를 삭제"""
@@ -289,6 +295,8 @@ class TelegramBot(BaseBot[telegram.Message]):
             await msg.delete()
         except telegram.error.BadRequest as e:
             self.logger.error("Delete message failed ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data))
+        except telegram.error.TelegramError as e:
+            self.logger.error("Delete message failed: {e.__name__} ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data))
 
     async def from_dict(self, data: SerializedBotData) -> None:
         """메시지 목록 및 작업 큐 역직렬화
