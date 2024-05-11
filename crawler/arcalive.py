@@ -74,7 +74,7 @@ class ArcaLiveCrawler(BaseCrawler):
                     "recommend": _recommend_tag.text,
                     "view": _view_tag.text,
                     "price": _price_tag.text.strip(),
-                    "delivery": [_delivery_tag.text.strip()]
+                    "delivery": _delivery_tag.text.strip()
                 },
             }
         return data

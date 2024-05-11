@@ -55,7 +55,7 @@ class QuasarzoneMobileCrawler(BaseCrawler):
                 self.logger.warning("Cannot get delivery info tags")
                 continue
             else:
-                delivery = [n.text for n in _delivery_tag if n.text]
+                delivery = " / ".join(n.text.strip() for n in _delivery_tag if n.text.strip())
             if (_is_end_tag := row.select_one(".label")) and _is_end_tag.text.strip() == "종료":
                 is_end = True
             else:
@@ -178,6 +178,6 @@ class QuasarzoneCrawler(BaseCrawler):
                 data["direct_delivery"] = True if "가능" in e.text else False
             elif "배송비" in e.text.strip():
                 # 배송비 태그 - 배송비 {텍스트}
-                data["delivery"] = [e.text.replace("배송비", "").strip()]
+                data["delivery"] = e.text.replace("배송비", "").strip()
         return data
     

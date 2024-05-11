@@ -320,7 +320,7 @@ class TelegramBot(BaseBot[telegram.Message]):
         else:
             md = escape_markdown("{title}".format(**d))
         if d["extra"].get("price") and d["extra"].get("delivery"):
-            md += escape_markdown(f"\n{d['extra']['price']} / {' / '.join(d['extra']['delivery'])}")
+            md += escape_markdown("\n{price} / {delivery}".format(**d["extra"]))
         if d["is_end"]:
             md = f"~{md}~"
         btn = [

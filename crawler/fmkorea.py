@@ -73,5 +73,5 @@ class FmkoreaCrawler(BaseCrawler):
             elif "가격" in e.text:
                 data["price"] = e.find("a").text.strip()
             elif "배송" in e.text:
-                data["delivery"] = [e.find("a").text.strip()]
+                data["delivery"] = e.find("a").text.strip()
         return data
