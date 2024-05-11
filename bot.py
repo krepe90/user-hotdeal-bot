@@ -320,7 +320,13 @@ class TelegramBot(BaseBot[telegram.Message]):
         else:
             md = escape_markdown("{title}".format(**d))
         if d["extra"].get("price") and d["extra"].get("delivery"):
-            md += escape_markdown("\n{price} / {delivery}".format(**d["extra"]))
+            delivery_direct = d["extra"].get("direct_delivery")
+            if delivery_direct is None:
+                md += escape_markdown("\n{price} / {delivery}".format(**d["extra"]))
+            elif delivery_direct:
+                md += escape_markdown("\n{price} / {delivery} (직배 가능)".format(**d["extra"]))
+            else:
+                md += escape_markdown("\n{price} / {delivery} (직배 불가능)".format(**d["extra"]))
         if d["is_end"]:
             md = f"~{md}~"
         btn = [
