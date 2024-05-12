@@ -1,6 +1,8 @@
 from .base_crawler import BaseCrawler, BaseArticle, ArticleCollection
 from .clien import ClienCrawler
 from .dummy import DummyCrawler
+from .damoang import DamoangCrawler
+from .fmkorea import FmkoreaCrawler
 from .ppomppu import PpomppuCrawler
 from .ruliweb import RuliwebCrawler
 from .arcalive import ArcaLiveCrawler
