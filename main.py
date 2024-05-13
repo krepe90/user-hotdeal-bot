@@ -75,7 +75,7 @@ class BotManager:
 
     async def init_session(self):
         self.logger.info("Initializing start")
-        timeout = aiohttp.ClientTimeout(total=30)
+        timeout = aiohttp.ClientTimeout(total=20)
         self.session = aiohttp.ClientSession(headers=HEADERS, trust_env=True, timeout=timeout)
         self.crawlers: dict[str, crawler.BaseCrawler] = {}
         self.bots: dict[str, bot.BaseBot] = {}
