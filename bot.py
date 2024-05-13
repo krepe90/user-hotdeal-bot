@@ -89,6 +89,7 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
         """
         if crawler_name not in self.cache:
             self.logger.debug(f"Cache for {crawler_name} not found")
+            self.cache[crawler_name] = {}
             return
         messages = self.cache[crawler_name]
         remove_list = [i for i in messages.keys() if i < id_min]
