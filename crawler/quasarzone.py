@@ -167,7 +167,7 @@ class QuasarzoneCrawler(BaseCrawler):
             if "category" in e.attrs.get("class", []):
                 # 카테고리 태그 - PC/하드웨어
                 data["category"] = e.text.strip()
-            elif e.find(text=True, recursive=False) == "가격":
+            elif e.find(text=True, recursive=False).strip() == "가격":
                 # 가격 태그 - ￦ 121,687 (KRW)
                 data["price"] = e.find("span").text.strip()
             elif "brand" in e.attrs.get("class", []):
