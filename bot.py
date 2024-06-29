@@ -14,6 +14,9 @@ MessageType = TypeVar("MessageType")
 
 def message_serializer(obj: Any) -> Any:
     """메시지 객체를 직렬화할 때 사용하는 함수
+
+    Args:
+        obj: 직렬화할 객체, 현재 telegram.Message 객체만 지원
     """
     if isinstance(obj, telegram.Message):
         return obj.to_dict()
@@ -98,6 +101,9 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
             self.logger.debug(f"Removed expired message object ({crawler_name}/{article_id})")
 
     async def consumer(self):
+        """메시지 전송 작업을 처리하는 코루틴. 큐에 아이템이 들어오면 해당 아이템을 처리.
+        별도의 작업이 없을 때는 1초마다 큐에 아이템이 있는지 확인.
+        """
         item = None
         try:
             while self.is_running:
@@ -126,10 +132,12 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
             return
 
     async def run_consumer(self):
+        """Consumer 작업 생성해 시작"""
         self.is_running = True
         self.consumer_task = asyncio.create_task(self.consumer())
 
     async def stop_consumer(self):
+        """Consumer 작업 정지"""
         self.is_running = False
         if self.consumer_task is None:
             return
@@ -142,6 +150,7 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
             self.consumer_task.cancel()
 
     async def check_consumer(self, no_warning: bool = False):
+        """Consumer 작업이 종료되었거나 종료된 상태인 경우 다시 시작"""
         if self.consumer_task is None or self.consumer_task.done():
             if not no_warning:
                 self.logger.warning("Consumer task stopped. Restarting...")
@@ -149,42 +158,87 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
 
     @abstractmethod
     async def _send(self, data: BaseArticle) -> Union[MessageType, None]:
-        """메시지 전송 구현 추상 메서드"""
+        """메시지 전송 구현 추상 메서드. 실제 메시지 전송 작업 수행 및 메시지 객체 저장 로직의 구현이 필요.
+        
+        Args:
+            data: 게시글 객체
+        
+        Returns:
+            msg_obj: 전송된 메시지 객체
+        """
         pass
 
     @abstractmethod
     async def _edit(self, data: BaseArticle):
-        """메시지 수정 구현 추상 메서드"""
+        """메시지 수정 구현 추상 메서드. 실제 메시지 수정 작업 수행 로직의 구현이 필요.
+        
+        Args:
+            data: 게시글 객체
+        """
         pass
 
     @abstractmethod
     async def _delete(self, data: BaseArticle):
-        """메시지 삭제 구현 추상 메서드"""
+        """메시지 삭제 구현 추상 메서드
+        
+        Args:
+            data: 게시글 객체
+        """
         pass
 
     async def send(self, data: BaseArticle) -> None:
+        """게시글 객체를 받아서 메시지 전송 작업을 예약 (큐에 추가)
+
+        Args:
+            data: 게시글 객체
+        """
         await self.check_consumer()
         await self.queue.put(("send", data))
 
     async def edit(self, data: BaseArticle) -> None:
+        """게시글 객체를 받아서 메시지 수정 작업을 예약 (큐에 추가)
+        
+        Args:
+            data: 게시글 객체
+        """
         await self.check_consumer()
         await self.queue.put(("edit", data))
 
     async def delete(self, data: BaseArticle) -> None:
+        """게시글 객체를 받아서 메시지 삭제 작업을 예약 (큐에 추가)
+
+        Args:
+            data: 게시글 객체
+        """
         await self.check_consumer()
         await self.queue.put(("delete", data))
 
     async def send_iter(self, data_iter: Iterable[BaseArticle]) -> None:
+        """게시글 객체들을 받아서 메시지 전송 작업을 예약 (큐에 추가)
+        
+        Args:
+            data_iter: Iterable한 게시글 객체들
+        """
         await self.check_consumer()
         for data in data_iter:
             await self.queue.put(("send", data))
 
     async def edit_iter(self, data_iter: Iterable[BaseArticle]) -> None:
+        """게시글 객체들을 받아서 메시지 수정 작업을 예약 (큐에 추가)
+
+        Args:
+            data_iter: Iterable한 게시글 객체들
+        """
         await self.check_consumer()
         for data in data_iter:
             await self.queue.put(("edit", data))
 
     async def delete_iter(self, data_iter: Iterable[BaseArticle]) -> None:
+        """게시글 객체들을 받아서 메시지 삭제 작업을 예약 (큐에 추가)
+
+        Args:
+            data_iter: Iterable한 게시글 객체들
+        """
         await self.check_consumer()
         for data in data_iter:
             await self.queue.put(("delete", data))
@@ -205,16 +259,25 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
 
     @abstractmethod
     async def from_dict(self, data: SerializedBotData) -> None:
-        """"""
+        """메시지 목록 및 작업 큐 역직렬화 구현 추상 메서드
+        
+        Args:
+            data: 직렬화된 메시지 목록 및 작업 큐의 dict 객체
+        """
         pass
 
     async def close(self):
-        # wait until self.queue is empty, and close consumer
-        # 메시지를 다 전송하지 못한 상황이면 해당 데이터들을 따로 직렬화를 해야할 것 같다.
+        """봇 객체 종료. 모든 메시지 전송 작업이 완료될 때까지 대기한 다음 consumer task를 종료"""
         await self.stop_consumer()
 
 
 class DummyBot(BaseBot):
+    """
+    테스트를 위해 제작한 더미 봇 클래스. 실제 메시지 전송/수정/삭제 작업을 수행하지 않고 로그만 출력.
+
+    Args:
+        name (str): 봇 이름
+    """
     def __init__(self, name: str) -> None:
         super().__init__(name)
 

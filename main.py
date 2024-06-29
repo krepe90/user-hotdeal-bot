@@ -74,6 +74,8 @@ class BotManager:
         self.closed = False
 
     async def init_session(self):
+        """세션 초기화
+        """
         self.logger.info("Initializing start")
         timeout = aiohttp.ClientTimeout(total=20)
         self.session = aiohttp.ClientSession(headers=HEADERS, trust_env=True, timeout=timeout)
@@ -84,6 +86,11 @@ class BotManager:
         await self.load()
 
     async def init_crawlers(self, crawlers: dict[str, CrawlerConfig]):
+        """크롤러 객체 생성/재사용/초기화 등 수행
+
+        Args:
+            crawlers (dict[str, CrawlerConfig]): 크롤러 설정 정보 목록
+        """
         self.logger.info("Crawler initialize start")
         _crawlers_old = self.crawlers
         self.crawlers = {}
@@ -118,6 +125,11 @@ class BotManager:
         self.logger.info(f"{len(self.crawlers)} crawler(s) initialized")
 
     async def init_bots(self, bots: dict[str, BotConfig]):
+        """봇 객체 생성/재사용/초기화 등 수행
+        
+        Args:
+            bots (dict[str, BotConfig]): 봇 설정 정보 목록
+        """
         self.logger.info("Bot initialize start")
         _bots_old, self.bots = self.bots, {}
         for bot_name, bot_config in bots.items():
@@ -152,6 +164,11 @@ class BotManager:
         self.logger.info(f"{len(self.bots)} bot(s) initialized")
 
     async def deserialize_articles(self, crawler_data: dict[str, crawler.ArticleCollection]):
+        """dump 파일로부터 게시글 정보 역직렬화 및 메모리에 저장
+        
+        Args:
+            crawler_data (dict[str, crawler.ArticleCollection]): 크롤러가 파싱한 게시글 정보
+        """
         self.logger.info("Article dump data deserialize start")
         # 크롤러가 파싱한 게시글 정보 불러오기
         for crawler_name, crawler_obj in crawler_data.items():
@@ -167,6 +184,11 @@ class BotManager:
         self.logger.info("Article dump data deserialize complete")
 
     async def deserialize_bots(self, bot_data: dict[str, bot.SerializedBotData]):
+        """dump 파일로부터 봇 및 봇 메시지 정보 역직렬화 및 메모리에 저장
+
+        Args:
+            bot_data (dict[str, bot.SerializedBotData]): 봇 관련 정보
+        """
         # 봇 정보 및 봇이 보냈던/보내야 할 메시지 정보 불러오기
         self.logger.info("Bot dump data deserialize start")
         for bot_name, bot_dump in bot_data.items():
@@ -182,11 +204,22 @@ class BotManager:
         self.logger.info("Bot dump data deserialize complete")
 
     async def load(self, config_file_path: str = "config.json", dump_file_path: str = "dump.json"):
+        """주어진 경로의 json 파일로부터 설정 및 데이터 로드
+        
+        Args:
+            config_file_path (str, optional): 설정 파일 경로, 기본값은 "config.json"
+            dump_file_path (str, optional): 데이터 파일 경로, 기본값은 "dump.json"
+        """
         # 설정 및 데이터 로드
         await self.load_config(config_file_path)
         await self.load_data(dump_file_path)
     
     async def load_config(self, config_file_path: str = "config.json"):
+        """주어진 경로의 json 파일로부터 설정 로드, 크롤ㄹ러 및 봇 초기화
+
+        Args:
+            config_file_path (str, optional): 설정 파일 경로, 기본값은 "config.json"
+        """
         # config.json 파일 읽기
         if not os.path.isfile(config_file_path):
             self.logger.error("Config file doesn't exists")
@@ -203,6 +236,11 @@ class BotManager:
         await self.init_bots(config["bots"])
     
     async def load_data(self, dump_file_path: str = "dump.json"):
+        """주어진 경로의 json 파일로부터 데이터 로드
+
+        Args:
+            dump_file_path (str, optional): 데이터 파일 경로, 기본값은 "dump.json"
+        """
         if not os.path.isfile(dump_file_path):
             self.logger.warning("Dump file doesn't exists")
             return
@@ -226,6 +264,11 @@ class BotManager:
                 self.article_cache[crawler_name] = crawler.ArticleCollection()
 
     async def dump(self, dump_file_path: str = "dump.json"):
+        """데이터를 지정한 경로의 json 파일에 저장
+
+        Args:
+            dump_file_path (str, optional): 데이터 파일 경로, 기본값은 "dump.json"
+        """
         dump = {
             "version": __version__,
             "crawler": self.article_cache,
@@ -235,6 +278,15 @@ class BotManager:
             json.dump(dump, f, ensure_ascii=False, indent=2, default=bot.message_serializer)
 
     async def _crawling(self, name: str, cwr: crawler.BaseCrawler) -> CrawlingResult:
+        """크롤러 객체를 받아 크롤링 수행, 이후 새로운 게시글, 업데이트된 게시글, 삭제된 게시글을 각각 반환
+
+        Args:
+            name (str): 크롤러 이름
+            cwr (crawler.BaseCrawler): 크롤러 객체
+        
+        Returns:
+            CrawlingResult: 크롤링 결과 (각각 새 글, 업데이트된 글, 삭제된 글 목록)
+        """
         result: CrawlingResult = {"new": [], "update": [], "remove": []}
         # 크롤러로부터 글 목록 불러오기
         recent_data: crawler.ArticleCollection = await cwr.get()
@@ -291,6 +343,11 @@ class BotManager:
         return result
 
     async def crawling(self) -> CrawlingResult:
+        """크롤러 객체들을 이용해 크롤링을 병렬 수행하고 결과를 반환
+        
+        Returns:
+            CrawlingResult: 크롤링 결과 (새로운 글, 업데이트된 글, 삭제된 글 목록)
+        """
         # 메시지 새로 보내기, 기존 메시지 업데이트, 기존 메시지 삭제
         result: CrawlingResult = {"new": [], "update": [], "remove": []}
         # 크롤러별로 웹페이지 크롤링 후 합쳐서 어떤 메시지를 새로 보내거나 정리할지 결정
@@ -315,6 +372,11 @@ class BotManager:
         return result
 
     async def send(self, d: CrawlingResult):
+        """크롤링 결과를 바탕으로 메시지 전송, 수정, 삭제
+
+        Args:
+            d (CrawlingResult): 크롤링 결과
+        """
         # 새 메시지 보내기
         for bot_name, bot_instance in self.bots.items():
             await bot_instance.send_iter(d["new"])
@@ -326,6 +388,8 @@ class BotManager:
             await bot_instance.delete_iter(d["remove"])
 
     async def _run(self):
+        """실제 크롤링 및 메시지 전송을 1회 수행, 예외 처리 포함
+        """
         try:
             # 크롤링
             data = await self.crawling()
@@ -335,6 +399,8 @@ class BotManager:
             self.logger.exception(e)
 
     async def run(self):
+        """크롤링 및 메시지 전송 작업을 주어진 시간(60초)마다 한번씩 영원히 반복
+        """
         await self.init_session()
         self.logger.info("Loop start")
         loop = asyncio.get_running_loop()
@@ -346,6 +412,8 @@ class BotManager:
         self.logger.debug("Loop stop (bot closed)")
 
     async def close(self):
+        """세션 닫기, 크롤러, 봇 닫기, 데이터 저장
+        """
         if self.closed:
             self.logger.info("session already closed")
             return
@@ -366,6 +434,8 @@ class BotManager:
         self.logger.info("session close / data dump end")
 
     async def reload(self):
+        """봇 재시작, 데이터 저장, config.json 파일 다시 읽어서 크롤러, 봇 초기화
+        """
         self.logger.info("Reload start")
         # 데이터 저장
         await self.dump()
@@ -374,6 +444,7 @@ class BotManager:
 
 
 async def shutdown(sig: signal.Signals, bot: BotManager):
+    """프로그램 종료 시그널 (sigterm, sigint) 핸들러"""
     logger_status.info(f"Received exit signal {sig.name}")
     loop = asyncio.get_running_loop()
     # cloasing bot
@@ -386,6 +457,7 @@ async def shutdown(sig: signal.Signals, bot: BotManager):
 
 
 async def reload(sig: signal.Signals, bot: BotManager):
+    """프로그램 재시작 시그널 (sighup) 핸들러"""
     logger_status.info(f"Received reload signal {sig.name}")
     await bot.reload()
 

@@ -39,12 +39,25 @@ class ArticleCollection(dict[int, BaseArticle]):
         return ArticleCollection({k: v for k, v in self.items() if k not in b})
 
     def remove_expired(self, i: int) -> None:
+        """article_id 값이 i보다 작은 게시글들을 삭제
+
+        Args:
+            i (int): 비교할 article_id 값
+        """
         # {n: m for n, m in self.article_cache[name].items() if n >= id_min}
         remove_list = [k for k in self.keys() if k < i]
         for k in remove_list:
             self.pop(k)
 
     def get_new(self, i: int) -> "ArticleCollection":
+        """article_id 값이 i보다 큰 게시글들을 모아 새 객체로 반환
+
+        Args:
+            i (int): 비교할 article_id 값
+
+        Returns:
+            ArticleCollection: 새로운 게시글 모음
+        """
         return ArticleCollection({k: v for k, v in self.items() if k > i})
 
 
@@ -58,6 +71,11 @@ class BaseCrawler(metaclass=ABCMeta):
         self._prev_status = 200
 
     async def get(self) -> ArticleCollection:
+        """게시글 데이터를 크롤링 및 파싱하여 ArticleCollection 객체로 반환
+        
+        Returns:
+            ArticleCollection: 게시글 목록
+        """
         html_list: List[str] = []
         for url in self.url_list:
             if (html := await self.request(url)):
@@ -70,6 +88,15 @@ class BaseCrawler(metaclass=ABCMeta):
         return data
 
     async def _request(self, url: str, retry: bool = False) -> Union[aiohttp.ClientResponse, None]:
+        """aiohttp를 사용하여 주어진 URL에 HTTP GET 요청을 보내고 응답을 반환
+
+        Args:
+            url (str): 요청할 URL
+            retry (bool, optional): 재시도 여부
+        
+        Returns:
+            aiohttp.ClientResponse | None: 응답 객체 (실패한 경우 None 반환)
+        """
         self.logger.debug(f"Send request to {url}")
         try:
             resp = await self.session.get(url, allow_redirects=False)
@@ -89,6 +116,14 @@ class BaseCrawler(metaclass=ABCMeta):
         return resp
 
     async def request(self, url: str) -> Union[str, None]:
+        """주어진 URL로부터 HTML 문자열을 반환
+
+        Args:
+            url (str): 요청할 URL
+
+        Returns:
+            str | None: HTML 문자열 (실패한 경우 None 반환)
+        """
         if (resp := await self._request(url)) is None:
             return
 
@@ -117,12 +152,28 @@ class BaseCrawler(metaclass=ABCMeta):
 
     @abstractmethod
     async def parsing(self, html: str) -> Dict[int, BaseArticle]:
+        """HTML 문자열을 파싱하여 게시글 데이터 목록을 반환
+
+        Args:
+            html (str): HTML 문자열
+
+        Returns:
+            dict[int, BaseArticle]: 게시글 데이터 목록
+        """
         pass
 
     async def close(self):
-        await self.session.close()
+        """세션 종료
+        """
+        if not self.session.closed:
+            await self.session.close()
 
     async def dump_http_response(self, resp: aiohttp.ClientResponse) -> None:
+        """HTTP 응답을 error/ 폴더에 'YYYYMMDD_HHMMSS_{crawler_name}.html' 형식으로 저장
+
+        Args:
+            resp (aiohttp.ClientResponse): aiohttp ClientResponse 객체
+        """
         current_datetime = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = os.path.join("error", f"{current_datetime}_{self.name}.html")
 
