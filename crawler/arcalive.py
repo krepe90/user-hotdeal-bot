@@ -41,7 +41,9 @@ class ArcaLiveCrawler(BaseCrawler):
                 _board_id = re_id.group(1)
                 _id = int(re_id.group(2))
             if (_category_tag := row.select_one(".badge")) is None:
-                self.logger.warning("Cannot get category tag")
+                # self.logger.warning("Cannot get category tag")
+                continue
+            if (_store_name_tag := row.select_one(".deal-store")) is None:
                 continue
             if (_writer_tag := row.select_one(".user-info span:first-child")) is None:
                 self.logger.warning("Cannot get writer tag")
@@ -63,7 +65,7 @@ class ArcaLiveCrawler(BaseCrawler):
             data[_id] = {
                 "article_id": _id,
                 "title": title,
-                "category": _category_tag.text.strip(),
+                "category": _category_tag.text.strip() if _category_tag is not None else "",
                 "site_name": "아카라이브",
                 "board_name": board_name,
                 "writer_name": _writer_tag.text.strip(),
