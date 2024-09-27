@@ -1,5 +1,8 @@
 # PATCHLOG
 
+## 2.1.1
+- 마이너 버그 수정
+
 ## v2.1.0
 - 내부 구조 개선
   - SIGHUP 대응 (프로그램 종료 없이 `dump.json` 저장 및 `config.json` 불러오기)
