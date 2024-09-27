@@ -2,7 +2,7 @@ import asyncio
 from abc import ABCMeta, abstractmethod
 import os
 import datetime
-from typing import Any, Dict, List, Optional, TypedDict, Union, Self
+from typing import Any, Optional, TypedDict, Union, Self
 import aiohttp
 import logging
 
@@ -35,7 +35,7 @@ class ArticleCollection(dict[int, BaseArticle]):
     def __getitem__(self, __key: int) -> BaseArticle:
         return super().__getitem__(__key)
 
-    def __sub__(self, b: Self) -> Self:
+    def __sub__(self, b: Self) -> "ArticleCollection":
         return ArticleCollection({k: v for k, v in self.items() if k not in b})
 
     def remove_expired(self, i: int) -> None:
@@ -62,9 +62,9 @@ class ArticleCollection(dict[int, BaseArticle]):
 
 
 class BaseCrawler(metaclass=ABCMeta):
-    def __init__(self, name: str, url_list: List[str], session: Optional[aiohttp.ClientSession] = None) -> None:
+    def __init__(self, name: str, url_list: list[str], session: Optional[aiohttp.ClientSession] = None) -> None:
         self.session: aiohttp.ClientSession = session if session is not None else aiohttp.ClientSession(trust_env=True)
-        self.url_list: List[str] = url_list
+        self.url_list: list[str] = url_list
         self.cls_name = self.__class__.__name__
         self.name = name
         self.logger = logging.getLogger(f"crawler.{self.__class__.__name__}")
@@ -76,7 +76,7 @@ class BaseCrawler(metaclass=ABCMeta):
         Returns:
             ArticleCollection: 게시글 목록
         """
-        html_list: List[str] = []
+        html_list: list[str] = []
         for url in self.url_list:
             if (html := await self.request(url)):
                 html_list.append(html)
@@ -87,7 +87,7 @@ class BaseCrawler(metaclass=ABCMeta):
 
         return data
 
-    async def _request(self, url: str, retry: bool = False) -> Union[aiohttp.ClientResponse, None]:
+    async def _request(self, url: str, retry: bool = False) -> aiohttp.ClientResponse | None:
         """aiohttp를 사용하여 주어진 URL에 HTTP GET 요청을 보내고 응답을 반환
 
         Args:
@@ -115,7 +115,7 @@ class BaseCrawler(metaclass=ABCMeta):
             return
         return resp
 
-    async def request(self, url: str) -> Union[str, None]:
+    async def request(self, url: str) -> str | None:
         """주어진 URL로부터 HTML 문자열을 반환
 
         Args:
@@ -146,12 +146,12 @@ class BaseCrawler(metaclass=ABCMeta):
                 html = await resp.text(encoding=encoding)
             except Exception as e:
                 await self.dump_http_response(resp)
-                self.logger.error("Cannot get response html string: {e}", e=e)
+                self.logger.error("Cannot get response html string: {}", e)
                 return
         return html
 
     @abstractmethod
-    async def parsing(self, html: str) -> Dict[int, BaseArticle]:
+    async def parsing(self, html: str) -> dict[int, BaseArticle]:
         """HTML 문자열을 파싱하여 게시글 데이터 목록을 반환
 
         Args:
