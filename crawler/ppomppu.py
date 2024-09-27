@@ -11,7 +11,7 @@ from .base_crawler import BaseCrawler, BaseArticle
 class PpomppuCrawler(BaseCrawler):
     async def parsing(self, html: str) -> Dict[int, BaseArticle]:
         soup = BeautifulSoup(html, "html.parser")
-        if (_board_name := soup.select_one(".bbs_title h1 a")) is None:
+        if (_board_name := soup.select_one(".bbs_title .bname a")) is None:
             self.logger.error("Can't find board name.")
             return {}
         if (_board_url := soup.select_one("input[name=id]")) is None:
