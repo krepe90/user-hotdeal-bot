@@ -1,0 +1,11 @@
+[project]
+name = "user-hotdeal-bot"
+version = "2.1.1"
+description = "한국 커뮤니티 사이트 핫딜 게시판 크롤링 및 메신저 전송 봇"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "aiohttp>=3.10.10",
+    "beautifulsoup4>=4.12.3",
+    "python-telegram-bot>=21.6",
+]
