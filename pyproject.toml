@@ -9,3 +9,10 @@ dependencies = [
     "beautifulsoup4>=4.12.3",
     "python-telegram-bot>=21.6",
 ]
+
+[dependency-groups]
+dev = [
+    "coverage>=7.6.4",
+    "pytest-asyncio>=0.24.0",
+    "pytest>=8.3.3",
+]
