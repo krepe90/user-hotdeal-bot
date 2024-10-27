@@ -36,10 +36,11 @@ class ClienCrawler(BaseCrawler):
             if (_category_tag := row.select_one(".icon_keyword")) is None or not _category_tag.text:
                 self.logger.warning("Cannot get category tag")
                 continue
-            _id = int(row.attrs.get("data-board-sn"))
-            if _id is None:
+            _id_str = row.attrs.get("data-board-sn")
+            if _id_str is None:
                 self.logger.warning("Cannot get article id")
                 continue
+            _id = int(_id_str)
             _recommend_tag = row.select_one(".list_votes")
             _recommend = _recommend_tag.text.strip() if _recommend_tag else "0"
             data[_id] = {
