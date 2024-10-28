@@ -112,6 +112,9 @@ class BotManager:
                     self.logger.info(f"Config changed: {crawler_name}")
             crawler_cls_name = crawler_config["crawler_name"]
             crawler_cls = getattr(crawler, crawler_cls_name, None)
+            if crawler_cls is None:
+                self.logger.warning(f"Unknown crawler class: {crawler_cls_name}")
+                continue
             if not issubclass(crawler_cls, crawler.BaseCrawler):
                 self.logger.warning(f"Invalid crawler class: {crawler_cls_name}")
                 continue
@@ -135,6 +138,9 @@ class BotManager:
         for bot_name, bot_config in bots.items():
             bot_cls_name = bot_config["bot_name"]
             bot_cls = getattr(bot, bot_cls_name, None)
+            if bot_cls is None:
+                self.logger.warning(f"Unknown bot class: {bot_cls_name}")
+                continue
             if not issubclass(bot_cls, bot.BaseBot):
                 self.logger.warning(f"Invalid bot class: {bot_cls_name}")
                 continue
@@ -153,7 +159,7 @@ class BotManager:
                     continue
                 # 설정이 바뀐 경우
                 else:
-                    _bot.close()
+                    await _bot.close()
                     self.logger.info(f"Config changed: {bot_name}")
             self.bots[bot_name] = bot_cls(name=bot_name, **bot_config["kwargs"])
             self.logger.info(f"Bot initialized: {bot_name} ({bot_cls_name})")
