@@ -38,10 +38,10 @@ class DamoangCrawler(BaseCrawler):
             if (_re_url := re.search(r"/([\w\d]+)/(\d+)", _url)) is None:
                 self.logger.warning("Cannot find board id and article id")
                 continue
-            if (_writer_tag := row.select_one(".wr-name a")) is None:
+            if (_writer_tag := row.select_one(".sv_wrap .sv_name")) is None:
                 self.logger.warning("Cannot get article wrtier tag")
                 continue
-            if (_recommend_tag := row.select_one(".wr-num.order-3")) is None:
+            if (_recommend_tag := row.select_one(".rcmd-box")) is None:
                 # hidden span tag로 "추천" 글자가 들어있음.
                 self.logger.warning("Cannot get article recommend tag")
                 continue
@@ -49,13 +49,17 @@ class DamoangCrawler(BaseCrawler):
                 # hidden span tag로 "조회" 글자가 들어있음.
                 self.logger.warning("Cannot get article view count tag")
                 continue
-            if (_status_badge_tag := row.select_one(".badge").find(text=True, recursive=False)) is None:
+            if (_status_badge_tag := row.select_one(".badge")) is None:
                 self.logger.warning("Cannot get article status badge")
+                continue
+            _status_badge_tag_text = _status_badge_tag.find(text=True, recursive=False)
+            if _status_badge_tag_text is None:
+                self.logger.warning("Cannot get article status badge text")
                 continue
 
             _board_id = _re_url.group(1)
             _id = int(_re_url.group(2))
-            if _status_badge_tag.text.strip() == "종료":
+            if _status_badge_tag_text.text.strip() == "종료":
                 is_end = True
             else:
                 is_end = False
