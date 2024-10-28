@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 import aiohttp
 
-import crawler
+from src import crawler
 
 
 HEADERS = {

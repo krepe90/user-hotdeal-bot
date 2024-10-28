@@ -1,6 +1,6 @@
 import pytest
 
-import crawler
+from src import crawler
 
 
 def generate_dummy_article(id_: int) -> crawler.BaseArticle:
