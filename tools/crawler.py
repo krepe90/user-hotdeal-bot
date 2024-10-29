@@ -50,22 +50,35 @@ async def main(module_name: str, detail: bool = False):
         # print as table with style
         # each row includes article_id, title, category, writer_name
         # if is_end is True, strikethough the title
-        typer.echo(
-            typer.style(
-            (
-                f"{article_id:<10} [{article_dict['category']}] {article_dict['title']} - {article_dict['writer_name']}"
-                f"\n            {article_dict['url']}"
-             ),
-            bold=False,
-            dim=article_dict["is_end"],
+        if detail:
+            typer.echo(
+                typer.style(
+                    (
+                        f"{article_id:<10} [{article_dict['category']}] {article_dict['title']} - {article_dict['writer_name']}"
+                        f"\n            {article_dict['url']}"
+                        f"\n            {article_dict['extra']}"
+                    ),
+                    bold=False,
+                    dim=article_dict["is_end"],
+                )
             )
-        )
-    
+        else:
+            typer.echo(
+                typer.style(
+                    (
+                        f"{article_id:<10} [{article_dict['category']}] {article_dict['title']} - {article_dict['writer_name']}"
+                        f"\n            {article_dict['url']}"
+                    ),
+                    bold=False,
+                    dim=article_dict["is_end"],
+                )
+            )
+
     await crawler_instance.close()
 
 
-def run(module_name: str):
-    asyncio.run(main(module_name))
+def run(module_name: str, detail: bool = False):
+    asyncio.run(main(module_name, detail=detail))
 
 
 if __name__ == "__main__":
