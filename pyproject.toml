@@ -15,4 +15,5 @@ dev = [
     "coverage>=7.6.4",
     "pytest-asyncio>=0.24.0",
     "pytest>=8.3.3",
+    "typer>=0.12.5",
 ]
