@@ -48,7 +48,7 @@ async def test_crawler_ppomppu_rss(session):
 @pytest.mark.asyncio
 async def test_crawler_ruliweb(session):
     """루리웹 예구핫딜 게시판 크롤링 테스트 수행"""
-    crawler_instance = crawler.RuliwebCrawler("ruliweb_crawler", ["https://bbs.ruliweb.com/community/board/300143"], session=session)
+    crawler_instance = crawler.RuliwebCrawler("ruliweb_crawler", ["https://bbs.ruliweb.com/market/board/1020?view=thumbnail"], session=session)
     data: crawler.ArticleCollection = await crawler_instance.get()
     assert len(data) > 0
 

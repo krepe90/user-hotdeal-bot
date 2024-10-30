@@ -27,15 +27,14 @@ class RuliwebCrawler(BaseCrawler):
             if (_id_tag := row.select_one(".info_article_id")) is None or not _id_tag.attrs.get("value", "").isnumeric():
                 self.logger.warning("Cannot get article id tag")
                 continue
-            if (_title_tag := row.select_one(".title_wrapper")) is None or not (_title := "".join([x.strip() for x in _title_tag if isinstance(x, NavigableString) and x.strip()])):
+            if (_title_tag := row.select_one(".title_wrapper .deco")) is None:
                 self.logger.warning("Cannot get article title tag")
                 continue
-            if (_re_title := re.match(r"\[([\S/]+)\]\s*(.+\S)", _title)) is None:
-                self.logger.warning(f"Cannot get article category and title")
+            if (_category_tag := row.select_one(".title_wrapper a")) is None:
+                self.logger.warning("Cannot get article category tag")
                 continue
-            else:
-                category = _re_title.group(1)
-                title = _re_title.group(2)
+            category = _category_tag.text.strip()
+            title = _title_tag.text.strip()
             if (_writer_tag := row.select_one(".nick a")) is None:
                 self.logger.warning("Cannot get writer tag")
                 continue
