@@ -5,8 +5,8 @@ from typing import Any, Iterable, Literal, TypedDict, Union, TypeVar, Generic, A
 
 import telegram
 
-from crawler.base_crawler import BaseArticle
-from util import escape_markdown
+from .crawler.base_crawler import BaseArticle
+from .util import escape_markdown
 
 
 MessageType = TypeVar("MessageType")
