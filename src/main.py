@@ -10,9 +10,9 @@ from typing import Any, TypedDict
 
 import aiohttp
 
-from . import crawler
-from . import bot
-from . import util
+import crawler
+import bot
+import util
 
 
 __version__ = "2.1.1"
