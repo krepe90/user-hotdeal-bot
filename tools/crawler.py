@@ -41,6 +41,18 @@ async def main(module_name: str, detail: bool = False):
         crawler_instance = crawler.DamoangCrawler(
             "damoang_crawler", ["https://damoang.net/economy"]
         )
+    elif module_name == "coolenjoy":
+        crawler_instance = crawler.CoolenjoyCrawler(
+            "coolenjoy_crawler", ["https://coolenjoy.net/bbs/rss.php?bo_table=jirum"]
+        )
+    elif module_name == "quasarzone":
+        crawler_instance = crawler.QuasarzoneCrawler(
+            "quasarzone_crawler", ["https://quasarzone.com/bbs/qb_saleinfo"]
+        )
+    elif module_name == "fmkorea":
+        crawler_instance = crawler.FmkoreaCrawler(
+            "fmkorea_crawler", ["https://www.fmkorea.com/hotdeal"]
+        )
     else:
         raise ValueError(f"Unknown module name: {module_name}")
 
