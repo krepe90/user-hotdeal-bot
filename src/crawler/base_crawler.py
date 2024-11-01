@@ -87,7 +87,7 @@ class BaseCrawler(metaclass=ABCMeta):
 
         return data
 
-    async def _request(self, url: str, retry: bool = False) -> aiohttp.ClientResponse | None:
+    async def _request(self, url: str) -> aiohttp.ClientResponse | None:
         """aiohttp를 사용하여 주어진 URL에 HTTP GET 요청을 보내고 응답을 반환
 
         Args:
@@ -104,11 +104,8 @@ class BaseCrawler(metaclass=ABCMeta):
             self.logger.error(f"Client connection timeout error: {e} ({url})")
             return
         except aiohttp.ClientError as e:
-            if retry:
-                resp = await self._request(url, False)
-            else:
-                self.logger.error(f"Client connection error: {e} ({url})")
-                return
+            self.logger.error(f"Client connection error: {e} ({url})")
+            return
         except asyncio.TimeoutError as e:
             # ServerTimeoutError 하고 이게 뭐가 다른거지?
             self.logger.error(f"Asyncio timeout error: {e} ({url})")
@@ -124,7 +121,13 @@ class BaseCrawler(metaclass=ABCMeta):
         Returns:
             str | None: HTML 문자열 (실패한 경우 None 반환)
         """
-        if (resp := await self._request(url)) is None:
+        retry_count = 2
+        for _ in range(retry_count):
+            resp = await self._request(url)
+            if resp is not None:
+                break
+        else:
+            self.logger.error(f"Client connection failed: {url}")
             return
 
         async with resp:
