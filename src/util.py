@@ -35,8 +35,8 @@ class TelegramHandler(logging.handlers.HTTPHandler):
             text = _emoji_list.get(record.levelname, "") + text
 
         escaped_text = escape_markdown(text)
-        if record.exc_info:
-            if not record.exc_text:
+        if self.formatter is not None and record.exc_info:
+            if  not record.exc_text:
                 record.exc_text = self.formatter.formatException(record.exc_info)
             escaped_text += "\n```\n" + record.exc_text + "\n```"
 

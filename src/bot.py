@@ -30,7 +30,7 @@ class SerializedBotData(TypedDict, Generic[MessageType]):
     queue: 봇이 아직 처리하지 않은 메시지들의 큐
     cache: 봇 객체에서 저장중인 메시지 객체 목록. {crawler_name(str): {id(int): (MessageType)}} 형태
     """
-    queue: list[tuple[str, BaseArticle]]
+    queue: list[tuple[Literal["send", "edit", "delete"], BaseArticle]]
     cache: dict[str, dict[int, MessageType]]
 
 
@@ -373,7 +373,11 @@ class TelegramBot(BaseBot[telegram.Message]):
             if crawler_name not in self.cache:
                 self.cache[crawler_name] = {}
             for msg_id, msg in msg_data.items():
-                self.cache[crawler_name][int(msg_id)] = telegram.Message.de_json(msg, self.bot)
+                msg_obj = telegram.Message.de_json(msg, self.bot)
+                if msg_obj is None:
+                    self.logger.warning(f"Failed to deserialize message object: {crawler_name}/{msg_id}")
+                    continue
+                self.cache[crawler_name][int(msg_id)] = msg_obj
         # queue
         for job in data["queue"]:
             await self.queue.put(job)

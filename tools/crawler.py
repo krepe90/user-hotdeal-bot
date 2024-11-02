@@ -12,7 +12,7 @@ async def main(module_name: str, detail: bool = False):
 
     Args:
         module_name (str): 크롤러 모듈 이름.
-        url (str | None): 크롤링할 URL.
+        detail (bool, optional): 상세 정보 출력 여부.
     """
     if module_name == "arca":
         crawler_instance = crawler.ArcaLiveCrawler(
