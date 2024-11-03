@@ -147,6 +147,9 @@ class BaseCrawler(metaclass=ABCMeta):
                 if (encoding := resp.get_encoding()) in ("euc-kr", "euc_kr"):
                     encoding = "cp949"
                 html = await resp.text(encoding=encoding)
+            except aiohttp.ClientConnectionError as e:
+                self.logger.error("Connection error: {}", e)
+                return
             except Exception as e:
                 await self.dump_http_response(resp)
                 self.logger.error("Cannot get response html string: {}", e)
