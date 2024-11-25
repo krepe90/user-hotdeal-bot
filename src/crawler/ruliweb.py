@@ -1,7 +1,7 @@
 # 유저 예판 핫딜 뽐뿌 게시판 https://bbs.ruliweb.com/market/board/1020
 # 유저 예판 핫딜 뽐뿌 게시판 (RSS) https://bbs.ruliweb.com/market/board/1020/rss
 import re
-from bs4 import BeautifulSoup, NavigableString
+from bs4 import BeautifulSoup, NavigableString, Tag
 from typing import Dict
 
 from .base_crawler import BaseCrawler, BaseArticle
@@ -35,7 +35,11 @@ class RuliwebCrawler(BaseCrawler):
                 self.logger.warning("Cannot get category tag")
                 continue
             category = _category_el.strip()
-            title = _title_tag.text.strip()
+            _title_text_tag = _title_tag.find_next("a")
+            if not isinstance(_title_text_tag, Tag):
+                self.logger.warning("Cannot get title text tag")
+                continue
+            title = _title_text_tag.text.strip()
             if (_writer_tag := row.select_one(".nick a")) is None:
                 self.logger.warning("Cannot get writer tag")
                 continue
