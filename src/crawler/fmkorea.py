@@ -47,7 +47,7 @@ class FmkoreaCrawler(BaseCrawler):
 
             data[_id] = {
                 "article_id": _id,
-                "title": _title_tag.find(text=True, recursive=False).text.strip(),
+                "title": _title_tag.find(string=True, recursive=False).text.strip(),
                 "category": _category_tag.text.strip(),
                 "site_name": "에펨코리아",
                 "board_name": board_name,

@@ -52,7 +52,7 @@ class DamoangCrawler(BaseCrawler):
             if (_status_badge_tag := row.select_one(".badge")) is None:
                 self.logger.warning("Cannot get article status badge")
                 continue
-            _status_badge_tag_text = _status_badge_tag.find(text=True, recursive=False)
+            _status_badge_tag_text = _status_badge_tag.find(string=True, recursive=False)
             if _status_badge_tag_text is None:
                 self.logger.warning("Cannot get article status badge text")
                 continue
@@ -74,8 +74,8 @@ class DamoangCrawler(BaseCrawler):
                 "url": f"https://damoang.net/{_board_id}/{_id}",
                 "is_end": is_end,
                 "extra": {
-                    "recommend": "".join(_recommend_tag.find_all(text=True, recursive=False)).strip(),
-                    "view": "".join(_view_tag.find_all(text=True, recursive=False)).strip(),
+                    "recommend": "".join(_recommend_tag.find_all(string=True, recursive=False)).strip(),
+                    "view": "".join(_view_tag.find_all(string=True, recursive=False)).strip(),
                 },
             }
         return data
