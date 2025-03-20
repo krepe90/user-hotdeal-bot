@@ -34,7 +34,7 @@ class RuliwebCrawler(BaseCrawler):
             if not isinstance(_category_el, NavigableString):
                 self.logger.warning("Cannot get category tag")
                 continue
-            category = _category_el.strip()
+            category = _category_el.strip(" \t\n[]")
             _title_text_tag = _title_tag.find_next("a")
             if not isinstance(_title_text_tag, Tag):
                 self.logger.warning("Cannot get title text tag")
