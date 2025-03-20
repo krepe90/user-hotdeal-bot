@@ -52,6 +52,11 @@ async def test_crawler_ruliweb(session):
     data: crawler.ArticleCollection = await crawler_instance.get()
     assert len(data) > 0
 
+    for article in data.values():
+        assert article["title"]
+        assert not article["category"].startswith("[")
+        assert not article["category"].endswith("]")
+
 
 @pytest.mark.asyncio
 async def test_crawler_clien(session):
