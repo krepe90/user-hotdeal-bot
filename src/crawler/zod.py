@@ -2,7 +2,7 @@
 # https://zod.kr/deal
 from bs4 import BeautifulSoup
 
-from src.crawler.base_crawler import BaseArticle, BaseCrawler
+from .base_crawler import BaseArticle, BaseCrawler
 
 
 class ZodCrawler(BaseCrawler):
