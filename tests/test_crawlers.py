@@ -1,3 +1,4 @@
+import json
 import pytest
 import pytest_asyncio
 import aiohttp
@@ -88,3 +89,13 @@ async def test_crawler_fmkorea(session):
     crawler_instance = crawler.FmkoreaCrawler("fmkorea_crawler", ["https://www.fmkorea.com/hotdeal"], session=session)
     data: crawler.ArticleCollection = await crawler_instance.get()
     assert len(data) > 0
+    # print(json.dumps(data, indent=2, ensure_ascii=False))
+
+
+@pytest.mark.asyncio
+async def test_crawler_zod(session):
+    """ZOD 특가 게시판 크롤링 테스트 수행"""
+    crawler_instance = crawler.ZodCrawler("zod_crawler", ["https://zod.kr/deal"], session=session)
+    data: crawler.ArticleCollection = await crawler_instance.get()
+    assert len(data) > 0
+    # print(json.dumps(data, indent=2, ensure_ascii=False))

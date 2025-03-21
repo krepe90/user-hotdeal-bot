@@ -1,4 +1,5 @@
 from .base_crawler import BaseCrawler, BaseArticle, ArticleCollection
+from .zod import ZodCrawler
 from .clien import ClienCrawler
 from .dummy import DummyCrawler
 from .damoang import DamoangCrawler
