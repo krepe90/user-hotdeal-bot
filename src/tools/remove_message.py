@@ -7,7 +7,7 @@ import json
 
 import telegram
 
-import bot
+from src import bot
 
 
 async def remove_all_messages(file_path: str):

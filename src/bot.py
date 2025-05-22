@@ -6,8 +6,8 @@ from typing import Any, Generic, Literal, TypedDict, TypeVar
 
 import telegram
 
-from crawler.base_crawler import BaseArticle
-from util import escape_markdown
+from src.crawler.base_crawler import BaseArticle
+from src.util import escape_markdown
 
 MessageType = TypeVar("MessageType")
 

@@ -42,6 +42,9 @@
   - Python>=3.11
   - aiohttp, beautifulsoup4
   - python-telegram-bot >= 20.1
+- Run
+  - `uv run -m src.main` (권장)
+  - `python -m src.main`
 - config
   - config.json
     - 크롤러 및 메시지 전송 봇 목록 저장.
