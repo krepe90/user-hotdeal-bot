@@ -19,7 +19,7 @@ class RuliwebCrawler(BaseCrawler):
         if (table := soup.select_one("table.board_list_table")) is None:
             self.logger.error("Can't find article list, skip parsing")
             return {}
-        rows = table.select("tr.table_body:not(.best, .notice)")
+        rows = table.select("tr.table_body.normal:not(.best, .notice)")
 
         data: Dict[int, BaseArticle] = {}
         for row in rows:
