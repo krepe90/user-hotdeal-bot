@@ -38,7 +38,7 @@ class ZodCrawler(BaseCrawler):
             if not article_url:
                 self.logger.error("Cannot find article url.")
                 continue
-                
+
             title_tag = article_link.select_one(".app-list-title-item")
             title = title_tag.text.strip() if title_tag else ""
 
@@ -60,21 +60,21 @@ class ZodCrawler(BaseCrawler):
                         extra["delivery"] = strong_tag.text.strip()
                     elif strong_tag.text.strip():
                         extra["mall"] = strong_tag.text.strip()
-            
+
             recommend_tag = article_link.select_one(".app-list__voted-count span")
             if recommend_tag and recommend_tag.text.strip().isdigit():
                 extra["recommend"] = int(recommend_tag.text.strip())
-            
+
             comment_tag = article_link.select_one(".app-list-comment")
             if comment_tag and comment_tag.text.strip().isdigit():
                 extra["comment"] = int(comment_tag.text.strip())
-            
+
             is_end = (
                 "종료" in title
                 or "품절" in title
                 or "zod-board-list--deal-ended" in row.get("class", [])
             )
-            
+
             base_url = "https://zod.kr"
             full_url = f"{base_url}{article_url}"
 
@@ -90,5 +90,5 @@ class ZodCrawler(BaseCrawler):
                 is_end=is_end,
                 extra=extra,
             )
-            
+
         return data

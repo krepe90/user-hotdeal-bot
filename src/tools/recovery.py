@@ -9,7 +9,7 @@ def recovery(dump_file_path: str = "dump.json"):
     # 1. dump.json 파일 읽기
     with open(dump_file_path, "r") as f:
         dump = json.load(f)
-    
+
     # 2. 대화형으로 사용자에게 article_id값 입력받기
     crawlers = list(dump["crawler"].keys())
     for crawler_name in crawlers:
@@ -22,7 +22,7 @@ def recovery(dump_file_path: str = "dump.json"):
         # 4. dump.json 파일에 반영
         dump["crawler"][crawler_name] = new_articles
         print(f"{crawler_name} 작업 완료")
-    
+
     # 5. dump.json 파일에 반영된 내용 저장
     with open(dump_file_path, "w") as f:
         json.dump(dump, f, indent=2, ensure_ascii=False)
