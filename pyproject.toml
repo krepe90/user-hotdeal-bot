@@ -18,3 +18,29 @@ dev = [
     "pytest>=8.3.3",
     "typer>=0.12.5",
 ]
+
+[tool.ruff]
+include = [
+    "pyproject.toml",
+    "src/**/*.py",
+    "tests/**/*.py",
+]
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E4",
+    "E7",
+    "E9",
+    "F",
+    "I",    # isort
+]
+ignore = [
+    "E501",  # line too long
+    # "F401",  # module imported but unused
+    "F841",  # local variable is assigned to but never used
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+]
+
+[tool.ruff.format]
