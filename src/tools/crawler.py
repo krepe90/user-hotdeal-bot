@@ -2,6 +2,7 @@
 """
 
 import asyncio
+
 import typer
 
 from src import crawler

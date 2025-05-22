@@ -1,19 +1,18 @@
-import os
-import sys
-import json
-import time
-import signal
 import asyncio
+import json
 import logging
 import logging.config
+import os
+import signal
+import sys
+import time
 from typing import Any, TypedDict
 
 import aiohttp
 
-import crawler
 import bot
-import util
-
+import crawler
+import util  # noqa: F401
 
 __version__ = "2.1.3"
 
@@ -25,7 +24,7 @@ HEADERS = {
 
 
 with open("config_logger.json", "r") as f:
-    _config_logger: "logging.config._DictConfigArgs" = json.load(f)
+    _config_logger = json.load(f)
     logging.config.dictConfig(_config_logger)
 logger_status = logging.getLogger("status")
 
@@ -129,7 +128,7 @@ class BotManager:
 
     async def init_bots(self, bots: dict[str, BotConfig]):
         """봇 객체 생성/재사용/초기화 등 수행
-        
+
         Args:
             bots (dict[str, BotConfig]): 봇 설정 정보 목록
         """
@@ -171,7 +170,7 @@ class BotManager:
 
     async def deserialize_articles(self, crawler_data: dict[str, crawler.ArticleCollection]):
         """dump 파일로부터 게시글 정보 역직렬화 및 메모리에 저장
-        
+
         Args:
             crawler_data (dict[str, crawler.ArticleCollection]): 크롤러가 파싱한 게시글 정보
         """
@@ -211,7 +210,7 @@ class BotManager:
 
     async def load(self, config_file_path: str = "config.json", dump_file_path: str = "dump.json"):
         """주어진 경로의 json 파일로부터 설정 및 데이터 로드
-        
+
         Args:
             config_file_path (str, optional): 설정 파일 경로, 기본값은 "config.json"
             dump_file_path (str, optional): 데이터 파일 경로, 기본값은 "dump.json"
@@ -219,7 +218,7 @@ class BotManager:
         # 설정 및 데이터 로드
         await self.load_config(config_file_path)
         await self.load_data(dump_file_path)
-    
+
     async def load_config(self, config_file_path: str = "config.json"):
         """주어진 경로의 json 파일로부터 설정 로드, 크롤ㄹ러 및 봇 초기화
 
@@ -233,14 +232,14 @@ class BotManager:
         try:
             with open(config_file_path, "r", encoding="utf-8") as f:
                 config: Config = json.load(f)
-        except json.JSONDecodeError as e:
+        except json.JSONDecodeError:
             self.logger.error("Config JSON file decode error occured")
             return
         # 크롤러 초기화
         await self.init_crawlers(config["crawlers"])
         # 메신저 봇 초기화
         await self.init_bots(config["bots"])
-    
+
     async def load_data(self, dump_file_path: str = "dump.json"):
         """주어진 경로의 json 파일로부터 데이터 로드
 
@@ -253,7 +252,7 @@ class BotManager:
         try:
             with open(dump_file_path, "r", encoding="utf-8") as f:
                 data: DumpedData = json.load(f)
-        except json.JSONDecodeError as e:
+        except json.JSONDecodeError:
             self.logger.error("Dump JSON file decode error occured")
             return
 
@@ -289,7 +288,7 @@ class BotManager:
         Args:
             name (str): 크롤러 이름
             cwr (crawler.BaseCrawler): 크롤러 객체
-        
+
         Returns:
             CrawlingResult: 크롤링 결과 (각각 새 글, 업데이트된 글, 삭제된 글 목록)
         """
@@ -316,8 +315,8 @@ class BotManager:
         # 글 목록 페이지 뒤로 넘어가 추적하지 않게 된 게시글들 메모리에서 삭제
         self.article_cache[name].remove_expired(id_min)
         # 봇 메시지 객체들도 비슷한 방식으로 삭제
-        for bot_name, bot in self.bots.items():
-            await bot.remove_expired_msg_obj(name, id_min)
+        for bot_name, bot_instance in self.bots.items():
+            await bot_instance.remove_expired_msg_obj(name, id_min)
         # 새로 추가된 글을 result["new"]에 저장 후 메모리 업데이트
         id_cache_max: int = max(self.article_cache[name].keys(), default=0)
         _new_articles = recent_data.get_new(id_cache_max)
@@ -350,7 +349,7 @@ class BotManager:
 
     async def crawling(self) -> CrawlingResult:
         """크롤러 객체들을 이용해 크롤링을 병렬 수행하고 결과를 반환
-        
+
         Returns:
             CrawlingResult: 크롤링 결과 (새로운 글, 업데이트된 글, 삭제된 글 목록)
         """
@@ -431,9 +430,9 @@ class BotManager:
             if not cwr.session.closed:
                 await cwr.close()
         # 봇 세션 닫기
-        for bot_name, bot in self.bots.items():
+        for bot_name, bot_instance in self.bots.items():
             self.logger.debug(f"bot close: {bot_name}")
-            await bot.close()
+            await bot_instance.close()
         # 데이터 저장
         self.logger.info("data dump start")
         await self.dump()

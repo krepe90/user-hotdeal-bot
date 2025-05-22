@@ -1,4 +1,3 @@
-import pytest
 
 from src import crawler
 
@@ -34,7 +33,7 @@ def test_article_collection_remove_expired():
 
 def test_article_collection_get_new():
     """ArticleCollection 클래스의 get_new 메서드 테스트
-    
+
     get_new 메서드는 ArticleCollection 객체에서 i보다 같거나 큰 article_id를 가진 Article 객체들을 반환해야 함.
     """
     ac = crawler.ArticleCollection({i: generate_dummy_article(i) for i in range(1, 11)})
@@ -44,7 +43,7 @@ def test_article_collection_get_new():
 
 def test_article_collection_sub():
     """ArticleCollection 클래스의 __sub__ 메서드 테스트
-    
+
     두 ArticleCollection 객체의 차집합을 반환해야 함.
     """
     ac1 = crawler.ArticleCollection({i: generate_dummy_article(i) for i in range(1, 6)})

@@ -1,13 +1,12 @@
 import random
-from typing import Optional
 
 import aiohttp
 
-from .base_crawler import ArticleCollection, BaseCrawler, BaseArticle
+from .base_crawler import ArticleCollection, BaseArticle, BaseCrawler
 
 
 class DummyCrawler(BaseCrawler):
-    def __init__(self, name: str, url_list: list[str], session: Optional[aiohttp.ClientSession] = None) -> None:
+    def __init__(self, name: str, url_list: list[str], session: aiohttp.ClientSession | None = None) -> None:
         super().__init__(name, url_list, session)
         self.start = 1
         self.dummy_data = {i: self._generate_article_object(i) for i in range(self.start, self.start + 10)}
@@ -22,7 +21,7 @@ class DummyCrawler(BaseCrawler):
         self.dummy_data.pop(random.choice(sorted(list(self.dummy_data.keys()))[:-1]))
         # 아무거나 하나 잡고 수정
         rand_target = random.choice(list(self.dummy_data.keys()))
-        self.dummy_data[rand_target]["title"] += f"!"
+        self.dummy_data[rand_target]["title"] += "!"
         # 목록에 추가
         self.dummy_data[new["article_id"]] = new
         self.dummy_data[new2["article_id"]] = new2

@@ -1,9 +1,9 @@
 # 중복해서 보내진 메시지를 삭제하기 위한 스크립트
 # 사용법: python ./tools/remove_message.py -i dump.json
 
-import json
-import asyncio
 import argparse
+import asyncio
+import json
 
 import telegram
 
@@ -21,7 +21,7 @@ async def remove_all_messages(file_path: str):
 
     if not bot_data_tg:
         return
-    
+
     bot_tg = bot.TelegramBot("telegram", config["bots"]["telegram"]["kwargs"]["token"], config["bots"]["telegram"]["kwargs"]["target"])
     await bot_tg.from_dict(bot_data_tg)
 

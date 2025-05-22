@@ -1,13 +1,13 @@
 import asyncio
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Any, Iterable, Literal, TypedDict, Union, TypeVar, Generic, Awaitable
+from collections.abc import Iterable
+from typing import Any, Generic, Literal, TypedDict, TypeVar
 
 import telegram
 
 from crawler.base_crawler import BaseArticle
 from util import escape_markdown
-
 
 MessageType = TypeVar("MessageType")
 
@@ -43,9 +43,9 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
         self.cache: dict[str, dict[int, MessageType]] = dict()
         self.queue: asyncio.Queue[tuple[Literal["send", "edit", "delete"], BaseArticle]] = asyncio.Queue()
         self.is_running = True
-        self.consumer_task: Union[asyncio.Task, None] = asyncio.create_task(self.consumer())
+        self.consumer_task: asyncio.Task | None = asyncio.create_task(self.consumer())
 
-    async def get_msg_obj(self, data: BaseArticle) -> Union[MessageType, None]:
+    async def get_msg_obj(self, data: BaseArticle) -> MessageType | None:
         """게시글 객체를 받아서 메시지 객체를 반환.
 
         Args:
@@ -157,12 +157,12 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
             await self.run_consumer()
 
     @abstractmethod
-    async def _send(self, data: BaseArticle) -> Union[MessageType, None]:
+    async def _send(self, data: BaseArticle) -> MessageType | None:
         """메시지 전송 구현 추상 메서드. 실제 메시지 전송 작업 수행 및 메시지 객체 저장 로직의 구현이 필요.
-        
+
         Args:
             data: 게시글 객체
-        
+
         Returns:
             msg_obj: 전송된 메시지 객체
         """
@@ -171,7 +171,7 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
     @abstractmethod
     async def _edit(self, data: BaseArticle):
         """메시지 수정 구현 추상 메서드. 실제 메시지 수정 작업 수행 로직의 구현이 필요.
-        
+
         Args:
             data: 게시글 객체
         """
@@ -180,7 +180,7 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
     @abstractmethod
     async def _delete(self, data: BaseArticle):
         """메시지 삭제 구현 추상 메서드
-        
+
         Args:
             data: 게시글 객체
         """
@@ -197,7 +197,7 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
 
     async def edit(self, data: BaseArticle) -> None:
         """게시글 객체를 받아서 메시지 수정 작업을 예약 (큐에 추가)
-        
+
         Args:
             data: 게시글 객체
         """
@@ -215,7 +215,7 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
 
     async def send_iter(self, data_iter: Iterable[BaseArticle]) -> None:
         """게시글 객체들을 받아서 메시지 전송 작업을 예약 (큐에 추가)
-        
+
         Args:
             data_iter: Iterable한 게시글 객체들
         """
@@ -260,7 +260,7 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
     @abstractmethod
     async def from_dict(self, data: SerializedBotData) -> None:
         """메시지 목록 및 작업 큐 역직렬화 구현 추상 메서드
-        
+
         Args:
             data: 직렬화된 메시지 목록 및 작업 큐의 dict 객체
         """
@@ -308,7 +308,7 @@ class TelegramBot(BaseBot[telegram.Message]):
         self.bot = telegram.Bot(token)
         self.target = target
 
-    async def _send(self, data: BaseArticle, retry: bool = False) -> Union[telegram.Message, None]:
+    async def _send(self, data: BaseArticle, retry: bool = False) -> telegram.Message | None:
         kwargs = self._make_message(data)
         msg = None
         try:

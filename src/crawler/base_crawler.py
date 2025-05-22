@@ -1,10 +1,11 @@
 import asyncio
-from abc import ABCMeta, abstractmethod
-import os
 import datetime
-from typing import Any, Optional, TypedDict, Union, Self
-import aiohttp
 import logging
+import os
+from abc import ABCMeta, abstractmethod
+from typing import Any, Self, TypedDict
+
+import aiohttp
 
 
 class CrawlerExcpetion(Exception):
@@ -29,7 +30,7 @@ class ArticleCollection(dict[int, BaseArticle]):
         for k, v in data.items():
             self[k] = v
 
-    def __setitem__(self, __key: Union[int, str], __value: BaseArticle) -> None:
+    def __setitem__(self, __key: int | str, __value: BaseArticle) -> None:
         return super().__setitem__(int(__key), __value)
 
     def __getitem__(self, __key: int) -> BaseArticle:
@@ -62,7 +63,7 @@ class ArticleCollection(dict[int, BaseArticle]):
 
 
 class BaseCrawler(metaclass=ABCMeta):
-    def __init__(self, name: str, url_list: list[str], session: Optional[aiohttp.ClientSession] = None) -> None:
+    def __init__(self, name: str, url_list: list[str], session: aiohttp.ClientSession | None = None) -> None:
         self.session: aiohttp.ClientSession = session if session is not None else aiohttp.ClientSession(trust_env=True)
         self.url_list: list[str] = url_list
         self.cls_name = self.__class__.__name__
@@ -72,7 +73,7 @@ class BaseCrawler(metaclass=ABCMeta):
 
     async def get(self) -> ArticleCollection:
         """게시글 데이터를 크롤링 및 파싱하여 ArticleCollection 객체로 반환
-        
+
         Returns:
             ArticleCollection: 게시글 목록
         """
@@ -93,7 +94,7 @@ class BaseCrawler(metaclass=ABCMeta):
         Args:
             url (str): 요청할 URL
             retry (bool, optional): 재시도 여부
-        
+
         Returns:
             aiohttp.ClientResponse | None: 응답 객체 (실패한 경우 None 반환)
         """

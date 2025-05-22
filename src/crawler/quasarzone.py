@@ -1,14 +1,14 @@
 # 핫딜 게시판 https://quasarzone.com/bbs/qb_saleinfo
 import re
-from bs4 import BeautifulSoup, Tag
-from typing import Dict
 
-from .base_crawler import BaseCrawler, BaseArticle
+from bs4 import BeautifulSoup, Tag
+
+from .base_crawler import BaseArticle, BaseCrawler
 
 
 class QuasarzoneMobileCrawler(BaseCrawler):
     # deprecated
-    async def parsing(self, html: str) -> Dict[int, BaseArticle]:
+    async def parsing(self, html: str) -> dict[int, BaseArticle]:
         soup = BeautifulSoup(html, "html.parser")
         # 게시판 이름
         if (_board_name := soup.select_one(".page-name")) is None:
@@ -21,7 +21,7 @@ class QuasarzoneMobileCrawler(BaseCrawler):
             return {}
         rows = table.select("li")
 
-        data: Dict[int, BaseArticle] = {}
+        data: dict[int, BaseArticle] = {}
         for row in rows:
             if (_url_tag := row.select_one(".subject-link")) is None or (_url := _url_tag.attrs.get("href")) is None:
                 self.logger.warning("Cannot find article url tag")
@@ -31,7 +31,7 @@ class QuasarzoneMobileCrawler(BaseCrawler):
                 continue
             # locked article
             if row.select_one(".fa-lock") is not None:
-                self.logger.debug(f"Find locked article, skip")
+                self.logger.debug("Find locked article, skip")
                 continue
             if (_title_tag := row.select_one(".ellipsis-with-reply-cnt")) is None or not _title_tag.text:
                 self.logger.warning("Cannot find article title tag")
@@ -83,7 +83,7 @@ class QuasarzoneMobileCrawler(BaseCrawler):
 
 
 class QuasarzoneCrawler(BaseCrawler):
-    async def parsing(self, html: str) -> Dict[int, BaseArticle]:
+    async def parsing(self, html: str) -> dict[int, BaseArticle]:
         soup = BeautifulSoup(html, "html.parser")
         # 게시판 이름
         if (_board_name := soup.select_one(".l-title h2")) is None:
@@ -96,7 +96,7 @@ class QuasarzoneCrawler(BaseCrawler):
             return {}
         rows = table.select("tr")
 
-        data: Dict[int, BaseArticle] = {}
+        data: dict[int, BaseArticle] = {}
         for row in rows:
             if (_url_tag := row.select_one(".subject-link")) is None or (_url := _url_tag.attrs.get("href")) is None:
                 self.logger.warning("Cannot find article url tag")
@@ -106,7 +106,7 @@ class QuasarzoneCrawler(BaseCrawler):
                 continue
             # locked article
             if row.select_one(".fa-lock") is not None:
-                self.logger.debug(f"Find locked article, skip")
+                self.logger.debug("Find locked article, skip")
                 continue
             if (_title_tag := row.select_one(".ellipsis-with-reply-cnt")) is None or not _title_tag.text:
                 self.logger.warning("Cannot find article title tag")
@@ -150,15 +150,15 @@ class QuasarzoneCrawler(BaseCrawler):
                 }
             }
         return data
-    
-    def info_tag_parser(self, el: Tag) -> Dict[str, str]:
+
+    def info_tag_parser(self, el: Tag) -> dict[str, str]:
         """div.market-info-sub p:first-child 받아서 쇼핑몰/가격/배송 데이터 처리해 반환
 
         Args:
             el (BeautifulSoup): div.market-info-sub p:first-child
 
         Returns:
-            Dict[str, str]: 쇼핑몰/가격/배송 데이터
+            dict[str, str]: 쇼핑몰/가격/배송 데이터
         """
         data = {}
         for e in el.find_all("span", recursive=False):
@@ -180,4 +180,3 @@ class QuasarzoneCrawler(BaseCrawler):
                 # 배송비 태그 - 배송비 {텍스트}
                 data["delivery"] = e.text.replace("배송비", "").strip()
         return data
-    

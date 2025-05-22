@@ -1,16 +1,16 @@
 # 다모앙 알뜰구매 게시판 https://damoang.net/economy
 # 다모앙 알뜰구매 게시판 (RSS) https://damoang.net/bbs/rss.php?bo_table=economy
 import re
-from bs4 import BeautifulSoup
-from typing import Dict
 
-from .base_crawler import BaseCrawler, BaseArticle
+from bs4 import BeautifulSoup
+
+from .base_crawler import BaseArticle, BaseCrawler
 
 
 class DamoangCrawler(BaseCrawler):
-    async def parsing(self, html: str) -> Dict[int, BaseArticle]:
+    async def parsing(self, html: str) -> dict[int, BaseArticle]:
         soup = BeautifulSoup(html, "html.parser")
-        data: Dict[int, BaseArticle] = {}
+        data: dict[int, BaseArticle] = {}
 
         if (_board_name := soup.select_one(".page-title")) is None:
             self.logger.error("Can't find board name.")

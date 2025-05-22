@@ -1,24 +1,21 @@
 # https://coolenjoy.net/bbs/jirum
 # https://coolenjoy.net/rss?bo_table=jirum (RSS)
 import re
-from bs4 import BeautifulSoup
 from html import unescape
-from typing import Dict
 from xml.etree import ElementTree
-
 
 from .base_crawler import BaseArticle, BaseCrawler
 
 
 class CoolenjoyCrawler(BaseCrawler):
-    async def parsing(self, html: str) -> None:
-        pass
+    async def parsing(self, html: str):
+        raise NotImplementedError()
 
 
 class CoolenjoyRSSCrawler(BaseCrawler):
     ns = {"dc": "http://purl.org/dc/elements/1.1/"}
 
-    async def parsing(self, html: str) -> Dict[int, BaseArticle]:
+    async def parsing(self, html: str) -> dict[int, BaseArticle]:
         try:
             tree = ElementTree.fromstring(html)
         except ElementTree.ParseError:
@@ -30,7 +27,7 @@ class CoolenjoyRSSCrawler(BaseCrawler):
         board_name = unescape(_board_name.text).split(">")[-1].strip()
         rows = tree.findall("./channel/item")
 
-        data: Dict[int, BaseArticle] = {}
+        data: dict[int, BaseArticle] = {}
         for row in rows:
             if (_link_tag := row.find("link")) is None or _link_tag.text is None:
                 self.logger.warning("Cannot find article url tag")

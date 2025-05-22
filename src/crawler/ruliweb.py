@@ -1,14 +1,13 @@
 # 유저 예판 핫딜 뽐뿌 게시판 https://bbs.ruliweb.com/market/board/1020
 # 유저 예판 핫딜 뽐뿌 게시판 (RSS) https://bbs.ruliweb.com/market/board/1020/rss
-import re
-from bs4 import BeautifulSoup, NavigableString, Tag
-from typing import Dict
 
-from .base_crawler import BaseCrawler, BaseArticle
+from bs4 import BeautifulSoup, NavigableString, Tag
+
+from .base_crawler import BaseArticle, BaseCrawler
 
 
 class RuliwebCrawler(BaseCrawler):
-    async def parsing(self, html: str) -> Dict[int, BaseArticle]:
+    async def parsing(self, html: str) -> dict[int, BaseArticle]:
         soup = BeautifulSoup(html, "html.parser")
         # 게시판 이름
         if (_board_name := soup.select_one("#board_name")) is None:
@@ -21,7 +20,7 @@ class RuliwebCrawler(BaseCrawler):
             return {}
         rows = table.select("tr.table_body.normal:not(.best, .notice)")
 
-        data: Dict[int, BaseArticle] = {}
+        data: dict[int, BaseArticle] = {}
         for row in rows:
             # 하나라도 실패할 경우 건너뛰기
             if (_id_tag := row.select_one(".info_article_id")) is None or not _id_tag.attrs.get("value", "").isnumeric():

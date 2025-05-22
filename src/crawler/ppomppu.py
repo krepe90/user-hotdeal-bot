@@ -1,15 +1,15 @@
 # 뽐뿌 게시판 https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu
 # 해외뽐뿌 게시판 https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu4
 import re
-from bs4 import BeautifulSoup
-from typing import Dict
 from xml.etree import ElementTree
 
-from .base_crawler import BaseCrawler, BaseArticle
+from bs4 import BeautifulSoup
+
+from .base_crawler import BaseArticle, BaseCrawler
 
 
 class PpomppuCrawler(BaseCrawler):
-    async def parsing(self, html: str) -> Dict[int, BaseArticle]:
+    async def parsing(self, html: str) -> dict[int, BaseArticle]:
         soup = BeautifulSoup(html, "html.parser")
         if (_board_name := soup.select_one(".bbs_title .bname a")) is None:
             self.logger.error("Can't find board name.")
@@ -24,7 +24,7 @@ class PpomppuCrawler(BaseCrawler):
         board_url = _board_url.attrs["value"]
         rows = table.select(".baseList.bbs_new1")
 
-        data: Dict[int, BaseArticle] = {}
+        data: dict[int, BaseArticle] = {}
         for row in rows:
             if (_id_tag := row.select_one("td:nth-child(1)")) is None:
                 self.logger.warning("Cannot get article id tag")
@@ -75,7 +75,7 @@ class PpomppuCrawler(BaseCrawler):
 
 
 class PpomppuRSSCrawler(BaseCrawler):
-    async def parsing(self, html: str) -> Dict[int, BaseArticle]:
+    async def parsing(self, html: str) -> dict[int, BaseArticle]:
         tree = ElementTree.fromstring(html)
         if (_board_title_tag := tree.find("./channel/title")) is None or (_board_title := _board_title_tag.text) is None:
             self.logger.error("Can't find board name.")
@@ -83,7 +83,7 @@ class PpomppuRSSCrawler(BaseCrawler):
         board_name = _board_title.split("-")[-1].strip()
         rows = tree.findall("./channel/item")
 
-        data: Dict[int, BaseArticle] = {}
+        data: dict[int, BaseArticle] = {}
         for row in rows:
             if (_url_tag := row.find("link")) is None or _url_tag.text is None:
                 self.logger.warning("Cannot get article url")

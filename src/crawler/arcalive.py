@@ -2,14 +2,14 @@
 # https://arca.live/b/hotdeal
 # API 문서화되면 전환 예정
 import re
-from bs4 import BeautifulSoup
-from typing import Dict
 
-from .base_crawler import BaseCrawler, BaseArticle
+from bs4 import BeautifulSoup
+
+from .base_crawler import BaseArticle, BaseCrawler
 
 
 class ArcaLiveCrawler(BaseCrawler):
-    async def parsing(self, html: str) -> Dict[int, BaseArticle]:
+    async def parsing(self, html: str) -> dict[int, BaseArticle]:
         soup = BeautifulSoup(html, "html.parser")
 
         # 채널 이름
@@ -23,7 +23,7 @@ class ArcaLiveCrawler(BaseCrawler):
             return {}
         rows = table.select(".vrow.hybrid")
 
-        data: Dict[int, BaseArticle] = {}
+        data: dict[int, BaseArticle] = {}
         for row in rows:
             # 하나라도 실패할 경우 건너뛰기
             if (_title_tag := row.select_one(".title")) is None:
