@@ -134,6 +134,7 @@ dmypy.json
 # project
 config.json
 config_logger.json
+config.yaml
 dump.json
 log/
 error/

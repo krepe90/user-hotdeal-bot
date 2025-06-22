@@ -43,12 +43,12 @@
 - Run
   - `uv run -m src.main` (권장)
   - `python -m src.main`
-- config
-  - config.json
-    - 크롤러 및 메시지 전송 봇 목록 저장.
-    - [config.json.example](/config.json.example) 파일 참조.
+- config: `config.yaml`
+  - 크롤러, 봇, 로깅 설정을 하나의 yaml 파일로 관리. ([예시](/config.example.yaml))
+  - `cp config.example.yaml config.yaml`
+  - `crawler`, `bot`
     - `crawler_name`, `bot_name` 에 적는 클래스 이름은 각각 [crawler](/crawler/__init__.py), [bot](/bot.py) 모듈에 임포트되어있어야 함.
-  - config_logger.json
+  - `logging`
     - `logging.config.dictConfig()` 참조 [(로깅 요리책: Logging cookbook)](https://docs.python.org/ko/3/howto/logging-cookbook.html#customizing-handlers-with-dictconfig)
     - logger 종류
       - `root`: 루트 로거
@@ -66,8 +66,7 @@ docker build -t user-hotdeal-bot .
 
 # run
 docker run -d --name user-hotdeal-bot \
-  -v ./config.json:/app/config.json \
-  -v ./config_logger.json:/app/config_logger.json \
+  -v ./config.yaml:/app/config.yaml \
   -v ./log:/app/log \
   user-hotdeal-bot
 ```

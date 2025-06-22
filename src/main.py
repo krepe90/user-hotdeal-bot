@@ -9,6 +9,7 @@ import time
 from typing import Any, TypedDict
 
 import aiohttp
+import yaml
 
 from src import (
     bot,
@@ -25,9 +26,18 @@ HEADERS = {
 }
 
 
-with open("config_logger.json", "r") as f:
-    _config_logger = json.load(f)
-    logging.config.dictConfig(_config_logger)
+def load_config_file(config_path: str = "config.yaml") -> "Config":
+    """YAML 또는 JSON 설정 파일을 로드합니다."""
+    with open(config_path, "r", encoding="utf-8") as f:
+        if config_path.endswith(".yaml") or config_path.endswith(".yml"):
+            return yaml.safe_load(f)
+        else:
+            return json.load(f)
+
+# 통합 설정 파일에서 로깅 설정 로드
+_config = load_config_file()
+if "logging" in _config:
+    logging.config.dictConfig(_config["logging"])
 logger_status = logging.getLogger("status")
 
 
@@ -48,6 +58,7 @@ class BotConfig(TypedDict):
 class Config(TypedDict):
     crawlers: dict[str, CrawlerConfig]
     bots: dict[str, BotConfig]
+    logging: dict[str, Any]
 
 
 class DumpedData(TypedDict):
@@ -210,32 +221,31 @@ class BotManager:
             self.logger.info(f"{bot_name}: {loaded_queue} message(s) queued")
         self.logger.info("Bot dump data deserialize complete")
 
-    async def load(self, config_file_path: str = "config.json", dump_file_path: str = "dump.json"):
-        """주어진 경로의 json 파일로부터 설정 및 데이터 로드
+    async def load(self, config_file_path: str = "config.yaml", dump_file_path: str = "dump.json"):
+        """주어진 경로의 설정 파일로부터 설정 및 데이터 로드
 
         Args:
-            config_file_path (str, optional): 설정 파일 경로, 기본값은 "config.json"
+            config_file_path (str, optional): 설정 파일 경로, 기본값은 "config.yaml"
             dump_file_path (str, optional): 데이터 파일 경로, 기본값은 "dump.json"
         """
         # 설정 및 데이터 로드
         await self.load_config(config_file_path)
         await self.load_data(dump_file_path)
 
-    async def load_config(self, config_file_path: str = "config.json"):
-        """주어진 경로의 json 파일로부터 설정 로드, 크롤ㄹ러 및 봇 초기화
+    async def load_config(self, config_file_path: str = "config.yaml"):
+        """주어진 경로의 설정 파일로부터 설정 로드, 크롤러 및 봇 초기화
 
         Args:
-            config_file_path (str, optional): 설정 파일 경로, 기본값은 "config.json"
+            config_file_path (str, optional): 설정 파일 경로, 기본값은 "config.yaml"
         """
-        # config.json 파일 읽기
+        # 설정 파일 읽기
         if not os.path.isfile(config_file_path):
             self.logger.error("Config file doesn't exists")
             return
         try:
-            with open(config_file_path, "r", encoding="utf-8") as f:
-                config: Config = json.load(f)
-        except json.JSONDecodeError:
-            self.logger.error("Config JSON file decode error occured")
+            config: Config = load_config_file(config_file_path)
+        except (yaml.YAMLError, json.JSONDecodeError) as e:
+            self.logger.error(f"Config file decode error occurred: {e}")
             return
         # 크롤러 초기화
         await self.init_crawlers(config["crawlers"])
@@ -441,12 +451,12 @@ class BotManager:
         self.logger.info("session close / data dump end")
 
     async def reload(self):
-        """봇 재시작, 데이터 저장, config.json 파일 다시 읽어서 크롤러, 봇 초기화
+        """봇 재시작, 데이터 저장, config.yaml 파일 다시 읽어서 크롤러, 봇 초기화
         """
         self.logger.info("Reload start")
         # 데이터 저장
         await self.dump()
-        # config.json 파일 다시 읽어서 크롤러, 봇 초기화
+        # config.yaml 파일 다시 읽어서 크롤러, 봇 초기화
         await self.load_config()
 
 

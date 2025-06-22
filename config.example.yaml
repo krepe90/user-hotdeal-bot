@@ -1,0 +1,81 @@
+# 크롤러 설정 (핫딜 게시글 수집)
+crawlers:
+  ruliweb_user_hotdeal: # 크롤러 이름
+    url_list:   # URL 목록 (보통 첫 페이지만 지정해도 무방)
+    - https://bbs.ruliweb.com/market/board/1020?view=thumbnail&page=1
+    crawler_name: RuliwebCrawler    # 크롤러 클래스 이름
+    description: 루리웹 유저 예판 핫딜 뽐뿌 게시판  # 설명
+    enabled: true   # 크롤러 활성화 여부
+  ppomppu_board:
+    url_list:
+    - https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu
+    crawler_name: PpomppuCrawler
+    description: 뽐뿌 뽐뿌게시판
+    enabled: true
+  ppomppu_foreign:
+    url_list:
+    - https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu4
+    crawler_name: PpomppuCrawler
+    description: 뽐뿌 해외뽐뿌게시판
+    enabled: true
+  clien_jirum:
+    url_list:
+    - https://www.clien.net/service/board/jirum
+    crawler_name: ClienCrawler
+    description: 클리앙 알뜰구매 게시판
+    enabled: true
+  coolenjoy_jirum_rss:
+    url_list:
+    - https://coolenjoy.net/rss.php?bo_table=jirum
+    crawler_name: CoolenjoyRSSCrawler
+    description: 쿨앤조이 알뜰구매 게시판
+    enabled: true
+  quasarzone_saleinfo:
+    url_list:
+    - https://quasarzone.com/bbs/qb_saleinfo
+    crawler_name: QuasarzoneCrawler
+    description: 퀘이서존 지름/할인정보 게시판
+    enabled: true
+  arcalive_hotdeal:
+    url_list:
+    - https://arca.live/b/hotdeal
+    crawler_name: ArcaLiveCrawler
+    description: 아카라이브 핫딜 게시판
+    enabled: true
+# 봇 설정 (메시지 전송)
+bots:
+  telegram:
+    bot_name: TelegramBot
+    description: Telegram Bot
+    kwargs: # 봇 설정에 필요한 추가 인자
+      token: TELEGRAM_API_TOKEN # 텔레그램 API 토큰 (BotFather에서 발급받은 토큰)
+      target: CHAT_ID_OR_CHANNEL_NAME # 메시지 전송 대상 (채팅 ID 또는 채널 이름)
+    enabled: true
+# 로깅 설정 (logging.config.dictConfig 사용)
+logging:
+  version: 1
+  disable_existing_loggers: true
+  formatters:
+    default:
+      format: "%(asctime)s %(levelname)s %(name)s %(message)s"
+    markdown:
+      format: |-
+        {levelname} - {name}
+        {asctime}
+        {message}
+      style: "{"
+  handlers:
+    stream:
+      class: logging.StreamHandler
+      formatter: default
+      level: DEBUG
+    file:
+      class: logging.FileHandler
+      formatter: default
+      filename: log/debug.log
+      level: DEBUG
+  root:
+    handlers:
+    - stream
+    - file
+    level: DEBUG
