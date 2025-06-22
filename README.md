@@ -58,6 +58,20 @@
     - handler
       - [util.TelegramHandler](util.py#L11): `logging.handlers.HTTPHandler`를 상속해 간단히 만든 텔레그램 핸들러
 
+### Run with Docker
+
+```bash
+# build
+docker build -t user-hotdeal-bot .
+
+# run
+docker run -d --name user-hotdeal-bot \
+  -v ./config.json:/app/config.json \
+  -v ./config_logger.json:/app/config_logger.json \
+  -v ./log:/app/log \
+  user-hotdeal-bot
+```
+
 
 ## 구현 방식
 
