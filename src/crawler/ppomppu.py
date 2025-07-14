@@ -54,7 +54,9 @@ class PpomppuCrawler(BaseCrawler):
             else:
                 category_tag = _category_tag.text.strip(" []")
             _id = int(_id_tag.text.strip())
-            writer = _writer_tag_inner.text.strip() if _writer_tag_inner.name == "span" else _writer_tag_inner.attrs["alt"]
+            writer = (
+                _writer_tag_inner.text.strip() if _writer_tag_inner.name == "span" else _writer_tag_inner.attrs["alt"]
+            )
             # 게시글 번호가 없는 경우 (== 다른 게시판 글인 경우) 스킵
             data[_id] = {
                 "article_id": _id,
@@ -69,7 +71,7 @@ class PpomppuCrawler(BaseCrawler):
                 "extra": {
                     "recommend": _recommend_tag.text,
                     "view": _view_tag.text,
-                }
+                },
             }
         return data
 
@@ -77,7 +79,9 @@ class PpomppuCrawler(BaseCrawler):
 class PpomppuRSSCrawler(BaseCrawler):
     async def parsing(self, html: str) -> dict[int, BaseArticle]:
         tree = ElementTree.fromstring(html)
-        if (_board_title_tag := tree.find("./channel/title")) is None or (_board_title := _board_title_tag.text) is None:
+        if (_board_title_tag := tree.find("./channel/title")) is None or (
+            _board_title := _board_title_tag.text
+        ) is None:
             self.logger.error("Can't find board name.")
             return {}
         board_name = _board_title.split("-")[-1].strip()
@@ -106,18 +110,13 @@ class PpomppuRSSCrawler(BaseCrawler):
             data[_id] = {
                 "article_id": _id,
                 "title": _title_tag.text,
-                "category": "",         # 카테고리 정보 없음
+                "category": "",  # 카테고리 정보 없음
                 "site_name": "뽐뿌",
                 "board_name": board_name,
                 "writer_name": _writer_tag.text,
                 "crawler_name": self.name,
                 "url": f"https://www.ppomppu.co.kr/zboard/view.php?id={board_url}&no={_id}",
                 "is_end": False,
-                "extra": {
-                    "comments": comments,
-                    "view": view,
-                    "recommend": recommend,
-                    "not_recommend": not_recommend
-                }
+                "extra": {"comments": comments, "view": view, "recommend": recommend, "not_recommend": not_recommend},
             }
         return data

@@ -50,13 +50,13 @@ class CoolenjoyRSSCrawler(BaseCrawler):
             data[_id] = {
                 "article_id": _id,
                 "title": _title_tag.text,
-                "category": "",             # 카테고리 정보 없음
+                "category": "",  # 카테고리 정보 없음
                 "site_name": "쿨앤조이",
                 "board_name": board_name,
                 "writer_name": _writer_tag.text,
                 "crawler_name": self.name,
                 "url": f"https://coolenjoy.net/bbs/{re_url.group(1)}/{re_url.group(2)}",
                 "is_end": False,
-                "extra": {}
+                "extra": {},
             }
         return data

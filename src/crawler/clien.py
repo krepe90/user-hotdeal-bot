@@ -55,9 +55,6 @@ class ClienCrawler(BaseCrawler):
                 "crawler_name": self.name,
                 "url": f"https://www.clien.net/service/board/{board_url}/{_id}",
                 "is_end": "sold_out" in row["class"],
-                "extra": {
-                    "recommend": _recommend,
-                    "view": _view_tag.text
-                },
+                "extra": {"recommend": _recommend, "view": _view_tag.text},
             }
         return data

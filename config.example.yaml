@@ -79,3 +79,11 @@ logging:
     - stream
     - file
     level: DEBUG
+
+# logfire 설정
+logfire:
+  enabled: false  # Set to true to enable Logfire remote logging
+  service_name: "user-hotdeal-bot"
+  console:
+    show_project_link: false
+  # token: "your-logfire-token"  # Optional: for authentication

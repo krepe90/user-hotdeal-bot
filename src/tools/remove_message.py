@@ -22,7 +22,9 @@ async def remove_all_messages(file_path: str):
     if not bot_data_tg:
         return
 
-    bot_tg = bot.TelegramBot("telegram", config["bots"]["telegram"]["kwargs"]["token"], config["bots"]["telegram"]["kwargs"]["target"])
+    bot_tg = bot.TelegramBot(
+        "telegram", config["bots"]["telegram"]["kwargs"]["token"], config["bots"]["telegram"]["kwargs"]["target"]
+    )
     await bot_tg.from_dict(bot_data_tg)
 
     # Remove all messages

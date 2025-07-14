@@ -28,6 +28,5 @@ def recovery(dump_file_path: str = "dump.json"):
         json.dump(dump, f, indent=2, ensure_ascii=False)
 
 
-
 if __name__ == "__main__":
     recovery()

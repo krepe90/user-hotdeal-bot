@@ -66,7 +66,7 @@ class DamoangCrawler(BaseCrawler):
             data[_id] = {
                 "article_id": _id,
                 "title": _title_tag.text.strip(),
-                "category": "",     # 카테고리 없음
+                "category": "",  # 카테고리 없음
                 "site_name": "다모앙",
                 "board_name": board_name,
                 "writer_name": _writer_tag.text.strip(),

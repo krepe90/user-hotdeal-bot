@@ -11,9 +11,7 @@ HEADERS = {
 
 @pytest_asyncio.fixture
 async def session():
-    session = aiohttp.ClientSession(
-        headers=HEADERS, trust_env=True, timeout=aiohttp.ClientTimeout(total=10)
-    )
+    session = aiohttp.ClientSession(headers=HEADERS, trust_env=True, timeout=aiohttp.ClientTimeout(total=10))
     yield session
     await session.close()
 
@@ -34,9 +32,7 @@ def validate_article_collection(data: crawler.ArticleCollection):
 @pytest.mark.asyncio
 async def test_crawler_arca(session):
     """아카라이브 핫딜 채널 크롤링 테스트 수행"""
-    crawler_instance = crawler.ArcaLiveCrawler(
-        "arcalive_hotdeal", ["https://arca.live/b/hotdeal"], session=session
-    )
+    crawler_instance = crawler.ArcaLiveCrawler("arcalive_hotdeal", ["https://arca.live/b/hotdeal"], session=session)
     data: crawler.ArticleCollection = await crawler_instance.get()
     validate_article_collection(data)
 
@@ -106,9 +102,7 @@ async def test_crawler_coolenjoy_rss(session):
 @pytest.mark.asyncio
 async def test_crawler_damoang(session):
     """다모앙 알뜰구매 게시판 크롤링 테스트 수행"""
-    crawler_instance = crawler.DamoangCrawler(
-        "damoang_crawler", ["https://damoang.net/economy"], session=session
-    )
+    crawler_instance = crawler.DamoangCrawler("damoang_crawler", ["https://damoang.net/economy"], session=session)
     data: crawler.ArticleCollection = await crawler_instance.get()
     validate_article_collection(data)
 
@@ -128,9 +122,7 @@ async def test_crawler_quasarzone(session):
 @pytest.mark.asyncio
 async def test_crawler_fmkorea(session):
     """에펨코리아 핫딜 게시판 크롤링 테스트 수행"""
-    crawler_instance = crawler.FmkoreaCrawler(
-        "fmkorea_crawler", ["https://www.fmkorea.com/hotdeal"], session=session
-    )
+    crawler_instance = crawler.FmkoreaCrawler("fmkorea_crawler", ["https://www.fmkorea.com/hotdeal"], session=session)
     data: crawler.ArticleCollection = await crawler_instance.get()
     validate_article_collection(data)
 
@@ -138,8 +130,6 @@ async def test_crawler_fmkorea(session):
 @pytest.mark.asyncio
 async def test_crawler_zod(session):
     """ZOD 특가 게시판 크롤링 테스트 수행"""
-    crawler_instance = crawler.ZodCrawler(
-        "zod_crawler", ["https://zod.kr/deal"], session=session
-    )
+    crawler_instance = crawler.ZodCrawler("zod_crawler", ["https://zod.kr/deal"], session=session)
     data: crawler.ArticleCollection = await crawler_instance.get()
     validate_article_collection(data)

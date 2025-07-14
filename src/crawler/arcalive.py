@@ -13,7 +13,9 @@ class ArcaLiveCrawler(BaseCrawler):
         soup = BeautifulSoup(html, "html.parser")
 
         # 채널 이름
-        if (_board_name := soup.select_one(".board-title .title")) is None or (board_name := _board_name.attrs.get("data-channel-name")) is None:
+        if (_board_name := soup.select_one(".board-title .title")) is None or (
+            board_name := _board_name.attrs.get("data-channel-name")
+        ) is None:
             self.logger.error("Can't find board name, skip parsing")
             return {}
 
@@ -34,7 +36,9 @@ class ArcaLiveCrawler(BaseCrawler):
                 continue
             else:
                 title = "".join(_title).strip()
-            if (_url := _title_tag.attrs.get("href")) is None or (re_id := re.match(r"\/b\/([\w\d]+)\/(\d+)\??.*", _url)) is None:
+            if (_url := _title_tag.attrs.get("href")) is None or (
+                re_id := re.match(r"\/b\/([\w\d]+)\/(\d+)\??.*", _url)
+            ) is None:
                 self.logger.warning("Cannot parse article url")
                 continue
             else:
@@ -76,7 +80,7 @@ class ArcaLiveCrawler(BaseCrawler):
                     "recommend": _recommend_tag.text,
                     "view": _view_tag.text,
                     "price": _price_tag.text.strip(),
-                    "delivery": _delivery_tag.text.strip()
+                    "delivery": _delivery_tag.text.strip(),
                 },
             }
         return data

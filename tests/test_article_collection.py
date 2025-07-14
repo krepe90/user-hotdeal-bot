@@ -1,4 +1,3 @@
-
 from src import crawler
 
 
@@ -14,7 +13,7 @@ def generate_dummy_article(id_: int) -> crawler.BaseArticle:
         crawler_name="Dummy Crawler",
         url="https://example.com",
         is_end=False,
-        extra={}
+        extra={},
     )
 
 
@@ -27,7 +26,7 @@ def test_article_collection():
 def test_article_collection_remove_expired():
     """ArticleCollection 클래스의 remove_expired 메서드 테스트"""
     ac = crawler.ArticleCollection({i: generate_dummy_article(i) for i in range(1, 11)})
-    ac.remove_expired(5)    # 1,2,3,4 삭제
+    ac.remove_expired(5)  # 1,2,3,4 삭제
     assert len(ac) == 6
 
 

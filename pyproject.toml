@@ -7,6 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "aiohttp>=3.10.10",
     "beautifulsoup4>=4.12.3",
+    "logfire[aiohttp]>=0.30.0",
     "python-telegram-bot>=21.6",
     "pyyaml>=6.0.2",
 ]

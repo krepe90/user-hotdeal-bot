@@ -1,5 +1,4 @@
-"""커맨드라인에서 사용할 수 있는 CLI 크롤러 도구, 크롤링 테스트용으로 사용 가능.
-"""
+"""커맨드라인에서 사용할 수 있는 CLI 크롤러 도구, 크롤링 테스트용으로 사용 가능."""
 
 import asyncio
 
@@ -35,25 +34,17 @@ async def main(module_name: str, detail: bool = False):
             ["https://bbs.ruliweb.com/market/board/1020?view=thumbnail&page=1"],
         )
     elif module_name == "clien":
-        crawler_instance = crawler.ClienCrawler(
-            "clien_crawler", ["https://www.clien.net/service/board/jirum"]
-        )
+        crawler_instance = crawler.ClienCrawler("clien_crawler", ["https://www.clien.net/service/board/jirum"])
     elif module_name == "damoang":
-        crawler_instance = crawler.DamoangCrawler(
-            "damoang_crawler", ["https://damoang.net/economy"]
-        )
+        crawler_instance = crawler.DamoangCrawler("damoang_crawler", ["https://damoang.net/economy"])
     elif module_name == "coolenjoy":
         crawler_instance = crawler.CoolenjoyCrawler(
             "coolenjoy_crawler", ["https://coolenjoy.net/bbs/rss.php?bo_table=jirum"]
         )
     elif module_name == "quasarzone":
-        crawler_instance = crawler.QuasarzoneCrawler(
-            "quasarzone_crawler", ["https://quasarzone.com/bbs/qb_saleinfo"]
-        )
+        crawler_instance = crawler.QuasarzoneCrawler("quasarzone_crawler", ["https://quasarzone.com/bbs/qb_saleinfo"])
     elif module_name == "fmkorea":
-        crawler_instance = crawler.FmkoreaCrawler(
-            "fmkorea_crawler", ["https://www.fmkorea.com/hotdeal"]
-        )
+        crawler_instance = crawler.FmkoreaCrawler("fmkorea_crawler", ["https://www.fmkorea.com/hotdeal"])
     else:
         raise ValueError(f"Unknown module name: {module_name}")
 

@@ -76,8 +76,8 @@ class QuasarzoneMobileCrawler(BaseCrawler):
                     "recommend": _recommend_tag.text.strip().replace("추천 : ", ""),
                     "view": _view_tag.text.strip(),
                     "price": _price_tag.text.strip(),
-                    "delivery": delivery
-                }
+                    "delivery": delivery,
+                },
             }
         return data
 
@@ -146,8 +146,8 @@ class QuasarzoneCrawler(BaseCrawler):
                 "extra": {
                     "recommend": _recommend_tag.text.strip(),
                     "view": _view_tag.text.strip(),
-                    **_info     # price, delivery, direct_delivery
-                }
+                    **_info,  # price, delivery, direct_delivery
+                },
             }
         return data
 

@@ -21,11 +21,7 @@ def v1_to_v2(dump_file_path: str):
                     _bot[bot_name]["cache"][c_name] = {}
                 _bot[bot_name]["cache"][c_name][msg_id] = bot_chat
 
-    new = {
-        "version": "v2.0.0",
-        "crawler": _crawler,
-        "bot": _bot
-    }
+    new = {"version": "v2.0.0", "crawler": _crawler, "bot": _bot}
 
     with open(dump_file_path, "w") as f:
         json.dump(new, f, ensure_ascii=False, indent=2)

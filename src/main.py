@@ -9,6 +9,7 @@ import time
 from typing import Any, TypedDict
 
 import aiohttp
+import logfire
 import yaml
 
 from src import (
@@ -34,10 +35,31 @@ def load_config_file(config_path: str = "config.yaml") -> "Config":
         else:
             return json.load(f)
 
+
 # 통합 설정 파일에서 로깅 설정 로드
 _config = load_config_file()
 if "logging" in _config:
     logging.config.dictConfig(_config["logging"])
+
+# Logfire 설정
+logfire_config = _config.get("logfire", {})
+logfire_enabled = logfire_config.get("enabled", False)
+console_config = logfire_config.get("console", {})
+
+configure_options = {
+    "service_name": logfire_config.get("service_name", "user-hotdeal-bot"),
+    "service_version": __version__,
+    "send_to_logfire": logfire_enabled,
+}
+if not logfire_enabled:
+    configure_options["console"] = logfire.ConsoleOptions(
+        show_project_link=console_config.get("show_project_link", False)
+    )
+if "token" in logfire_config:
+    configure_options["token"] = logfire_config["token"]
+logfire.configure(**configure_options)
+logfire_handler = logfire.LogfireLoggingHandler()
+logging.getLogger().addHandler(logfire_handler)
 logger_status = logging.getLogger("status")
 
 
@@ -55,10 +77,18 @@ class BotConfig(TypedDict):
     enabled: bool
 
 
+class LogfireConfig(TypedDict, total=False):
+    enabled: bool
+    service_name: str
+    console: dict[str, Any]
+    token: str
+
+
 class Config(TypedDict):
     crawlers: dict[str, CrawlerConfig]
     bots: dict[str, BotConfig]
     logging: dict[str, Any]
+    logfire: LogfireConfig
 
 
 class DumpedData(TypedDict):
@@ -75,6 +105,7 @@ class CrawlingResult(TypedDict):
         update: 업데이트된 게시글 목록
         remove: 삭제된 게시글 목록
     """
+
     new: list[crawler.BaseArticle]
     update: list[crawler.BaseArticle]
     remove: list[crawler.BaseArticle]
@@ -86,11 +117,14 @@ class BotManager:
         self.closed = False
 
     async def init_session(self):
-        """세션 초기화
-        """
+        """세션 초기화"""
         self.logger.info("Initializing start")
         timeout = aiohttp.ClientTimeout(total=20)
         self.session = aiohttp.ClientSession(headers=HEADERS, trust_env=True, timeout=timeout)
+
+        # Logfire HTTP 인스트루멘테이션
+        logfire.instrument_aiohttp_client()
+
         self.crawlers: dict[str, crawler.BaseCrawler] = {}
         self.bots: dict[str, bot.BaseBot] = {}
         self.article_cache: dict[str, crawler.ArticleCollection] = {}
@@ -114,8 +148,7 @@ class BotManager:
             if crawler_name in _crawlers_old:
                 _cwr = _crawlers_old.pop(crawler_name)
                 # 설정이 동일한 경우 재사용
-                if (_cwr.url_list == crawler_config["url_list"] and
-                    _cwr.cls_name == crawler_config["crawler_name"]):
+                if _cwr.url_list == crawler_config["url_list"] and _cwr.cls_name == crawler_config["crawler_name"]:
                     self.crawlers[crawler_name] = _cwr
                     self.logger.info(f"Crawler reused: {crawler_name} ({crawler_config['crawler_name']})")
                     continue
@@ -162,8 +195,7 @@ class BotManager:
             if bot_name in _bots_old:
                 _bot = _bots_old.pop(bot_name)
                 # 설정까지 동일한 경우 재사용
-                if (_bot.cls_name == bot_cls_name and
-                    _bot.config == bot_config["kwargs"]):
+                if _bot.cls_name == bot_cls_name and _bot.config == bot_config["kwargs"]:
                     self.bots[bot_name] = _bot
                     self.logger.info(f"Bot reused: {bot_name} ({bot_cls_name})")
                     # 봇 consumer task 재시작
@@ -198,7 +230,9 @@ class BotManager:
             self.article_cache[crawler_name] = crawler.ArticleCollection(crawler_obj)
             # logging
             self.logger.info(f"{crawler_name}: {len(self.article_cache[crawler_name])} article(s) loaded")
-            self.logger.debug(f"{crawler_name}: article_id range: [{min(self.article_cache[crawler_name], default=0)}, {max(self.article_cache[crawler_name], default=0)}]")
+            self.logger.debug(
+                f"{crawler_name}: article_id range: [{min(self.article_cache[crawler_name], default=0)}, {max(self.article_cache[crawler_name], default=0)}]"
+            )
         self.logger.info("Article dump data deserialize complete")
 
     async def deserialize_bots(self, bot_data: dict[str, bot.SerializedBotData]):
@@ -289,7 +323,7 @@ class BotManager:
         dump = {
             "version": __version__,
             "crawler": self.article_cache,
-            "bot": {bot_name: await bot.to_dict() for bot_name, bot in self.bots.items()}
+            "bot": {bot_name: await bot.to_dict() for bot_name, bot in self.bots.items()},
         }
         with open(dump_file_path, "w", encoding="utf-8") as f:
             json.dump(dump, f, ensure_ascii=False, indent=2, default=bot.message_serializer)
@@ -369,7 +403,9 @@ class BotManager:
         result: CrawlingResult = {"new": [], "update": [], "remove": []}
         # 크롤러별로 웹페이지 크롤링 후 합쳐서 어떤 메시지를 새로 보내거나 정리할지 결정
         st = time.time()
-        results: list[CrawlingResult] = await asyncio.gather(*[self._crawling(name, cwr) for name, cwr in self.crawlers.items()])
+        results: list[CrawlingResult] = await asyncio.gather(
+            *[self._crawling(name, cwr) for name, cwr in self.crawlers.items()]
+        )
         for d in results:
             result["new"].extend(d["new"])
             result["update"].extend(d["update"])
@@ -383,9 +419,25 @@ class BotManager:
             for article in result["remove"]:
                 self.logger.debug("Remove: {title} ({url})".format(**article))
         crawling_time = time.time() - st
-        self.logger.info(f"Result: {crawling_time:.2f}s, {len(result['new'])}/{len(result['update'])}/{len(result['remove'])}")
+        self.logger.info(
+            f"Result: {crawling_time:.2f}s, {len(result['new'])}/{len(result['update'])}/{len(result['remove'])}"
+        )
         if crawling_time > 30:
             self.logger.warning(f"Crawling time took so long: {crawling_time}")
+
+        # Logfire 메트릭 로깅
+        logfire.info(
+            "Crawling completed",
+            duration=crawling_time,
+            new_count=len(result["new"]),
+            update_count=len(result["update"]),
+            remove_count=len(result["remove"]),
+            total_articles=len(result["new"]) + len(result["update"]) + len(result["remove"]),
+        )
+
+        if crawling_time > 30:
+            logfire.warn("Slow crawling detected", duration=crawling_time, threshold=30)
+
         return result
 
     async def send(self, d: CrawlingResult):
@@ -405,19 +457,21 @@ class BotManager:
             await bot_instance.delete_iter(d["remove"])
 
     async def _run(self):
-        """실제 크롤링 및 메시지 전송을 1회 수행, 예외 처리 포함
-        """
-        try:
-            # 크롤링
-            data = await self.crawling()
-            # 메시지 보내기
-            await self.send(data)
-        except Exception as e:
-            self.logger.exception(e)
+        """실제 크롤링 및 메시지 전송을 1회 수행, 예외 처리 포함"""
+        with logfire.span("crawling_cycle"):
+            try:
+                # 크롤링
+                with logfire.span("crawling"):
+                    data = await self.crawling()
+                # 메시지 보내기
+                with logfire.span("send_messages"):
+                    await self.send(data)
+            except Exception as e:
+                self.logger.exception(e)
+                logfire.error("Crawling cycle failed", error=str(e))
 
     async def run(self):
-        """크롤링 및 메시지 전송 작업을 주어진 시간(60초)마다 한번씩 영원히 반복
-        """
+        """크롤링 및 메시지 전송 작업을 주어진 시간(60초)마다 한번씩 영원히 반복"""
         await self.init_session()
         self.logger.info("Loop start")
         loop = asyncio.get_running_loop()
@@ -429,8 +483,7 @@ class BotManager:
         self.logger.debug("Loop stop (bot closed)")
 
     async def close(self):
-        """세션 닫기, 크롤러, 봇 닫기, 데이터 저장
-        """
+        """세션 닫기, 크롤러, 봇 닫기, 데이터 저장"""
         if self.closed:
             self.logger.info("session already closed")
             return
@@ -451,8 +504,7 @@ class BotManager:
         self.logger.info("session close / data dump end")
 
     async def reload(self):
-        """봇 재시작, 데이터 저장, config.yaml 파일 다시 읽어서 크롤러, 봇 초기화
-        """
+        """봇 재시작, 데이터 저장, config.yaml 파일 다시 읽어서 크롤러, 봇 초기화"""
         self.logger.info("Reload start")
         # 데이터 저장
         await self.dump()
@@ -490,21 +542,27 @@ def main():
         loop.add_signal_handler(signal.SIGHUP, lambda: asyncio.create_task(reload(signal.SIGHUP, bot)))
 
     logger_status.info(f"hotdeal bot v{__version__} start!! (PID: {os.getpid()})")
+    logfire.info("Starting hotdeal bot", version=__version__, pid=os.getpid())
+
     try:
         loop.run_until_complete(bot.run())
     except KeyboardInterrupt:
         print("keyboard interrupt")
+        logfire.warn("Bot stopped by keyboard interrupt")
     except asyncio.CancelledError:
+        logfire.warn("Bot stopped by asyncio cancellation")
         pass
     finally:
         if sys.platform == "win32":
             try:
-                loop.run_until_complete(shutdown(signal.SIGINT, bot))
+                with logfire.span("shutdown"):
+                    loop.run_until_complete(shutdown(signal.SIGINT, bot))
             except asyncio.CancelledError:
                 pass
         if not loop.is_closed():
             loop.close()
     logger_status.info(f"hotdeal bot v{__version__} stopped!!")
+    logfire.info("Hotdeal bot stopped", version=__version__)
 
 
 if __name__ == "__main__":

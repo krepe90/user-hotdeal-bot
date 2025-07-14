@@ -69,11 +69,7 @@ class ZodCrawler(BaseCrawler):
             if comment_tag and comment_tag.text.strip().isdigit():
                 extra["comment"] = int(comment_tag.text.strip())
 
-            is_end = (
-                "종료" in title
-                or "품절" in title
-                or "zod-board-list--deal-ended" in row.get("class", [])
-            )
+            is_end = "종료" in title or "품절" in title or "zod-board-list--deal-ended" in row.get("class", [])
 
             base_url = "https://zod.kr"
             full_url = f"{base_url}{article_url}"

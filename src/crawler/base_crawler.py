@@ -6,6 +6,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Any, Self, TypedDict
 
 import aiohttp
+import logfire
 
 
 class CrawlerExcpetion(Exception):
@@ -13,16 +14,16 @@ class CrawlerExcpetion(Exception):
 
 
 class BaseArticle(TypedDict):
-    article_id: int             # 게시글 번호
-    title: str                  # 게시글 제목
-    category: str               # 게시글 카테고리
-    site_name: str              # 커뮤니티 사이트 이름
-    board_name: str             # 게시판 이름
-    writer_name: str            # 작성자 이름 (닉네임)
-    crawler_name: str           # 크롤러 (객체) 이름
-    url: str                    # 게시글 URL
-    is_end: bool                # 핫딜 종료 여부
-    extra: dict[str, Any]       # 기타 데이터 저장용
+    article_id: int  # 게시글 번호
+    title: str  # 게시글 제목
+    category: str  # 게시글 카테고리
+    site_name: str  # 커뮤니티 사이트 이름
+    board_name: str  # 게시판 이름
+    writer_name: str  # 작성자 이름 (닉네임)
+    crawler_name: str  # 크롤러 (객체) 이름
+    url: str  # 게시글 URL
+    is_end: bool  # 핫딜 종료 여부
+    extra: dict[str, Any]  # 기타 데이터 저장용
 
 
 class ArticleCollection(dict[int, BaseArticle]):
@@ -77,16 +78,26 @@ class BaseCrawler(metaclass=ABCMeta):
         Returns:
             ArticleCollection: 게시글 목록
         """
-        html_list: list[str] = []
-        for url in self.url_list:
-            if (html := await self.request(url)):
-                html_list.append(html)
+        with logfire.span(
+            f"crawler_get_{self.name}", crawler_name=self.__class__.__name__, url_count=len(self.url_list)
+        ):
+            html_list: list[str] = []
+            for url in self.url_list:
+                if html := await self.request(url):
+                    html_list.append(html)
 
-        data = ArticleCollection()
-        for html in html_list:
-            data.update(await self.parsing(html))
+            data = ArticleCollection()
+            for html in html_list:
+                data.update(await self.parsing(html))
 
-        return data
+            logfire.info(
+                "Crawler completed",
+                crawler_name=self.__class__.__name__,
+                urls_processed=len(html_list),
+                articles_found=len(data),
+            )
+
+            return data
 
     async def _request(self, url: str) -> aiohttp.ClientResponse | None:
         """aiohttp를 사용하여 주어진 URL에 HTTP GET 요청을 보내고 응답을 반환
@@ -170,8 +181,7 @@ class BaseCrawler(metaclass=ABCMeta):
         pass
 
     async def close(self):
-        """세션 종료
-        """
+        """세션 종료"""
         if not self.session.closed:
             await self.session.close()
 

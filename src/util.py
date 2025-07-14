@@ -17,11 +17,11 @@ class TelegramHandler(logging.handlers.HTTPHandler):
 
     def mapLogRecord(self, record: logging.LogRecord) -> dict[str, Any]:
         _emoji_list = {
-            "DEBUG": "\U0001F41B ",
-            "INFO": "\u270F ",
-            "WARNING": "\u26A0 ",
-            "ERROR": "\U0001F6AB ",
-            "CRITICAL": "\U0001F6A8 "
+            "DEBUG": "\U0001f41b ",
+            "INFO": "\u270f ",
+            "WARNING": "\u26a0 ",
+            "ERROR": "\U0001f6ab ",
+            "CRITICAL": "\U0001f6a8 ",
         }
         # formatter
         record.message = record.getMessage()
@@ -36,7 +36,7 @@ class TelegramHandler(logging.handlers.HTTPHandler):
 
         escaped_text = escape_markdown(text)
         if self.formatter is not None and record.exc_info:
-            if  not record.exc_text:
+            if not record.exc_text:
                 record.exc_text = self.formatter.formatException(record.exc_info)
             escaped_text += "\n```\n" + record.exc_text + "\n```"
 
@@ -44,5 +44,5 @@ class TelegramHandler(logging.handlers.HTTPHandler):
             "chat_id": self.target,
             "text": escaped_text,
             "parse_mode": self.parse_mode,
-            "disable_web_page_preview": True
+            "disable_web_page_preview": True,
         }

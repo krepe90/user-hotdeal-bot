@@ -23,7 +23,9 @@ class RuliwebCrawler(BaseCrawler):
         data: dict[int, BaseArticle] = {}
         for row in rows:
             # 하나라도 실패할 경우 건너뛰기
-            if (_id_tag := row.select_one(".info_article_id")) is None or not _id_tag.attrs.get("value", "").isnumeric():
+            if (_id_tag := row.select_one(".info_article_id")) is None or not _id_tag.attrs.get(
+                "value", ""
+            ).isnumeric():
                 self.logger.warning("Cannot get article id tag")
                 continue
             if (_title_tag := row.select_one(".title_wrapper")) is None:
@@ -63,7 +65,7 @@ class RuliwebCrawler(BaseCrawler):
                 "extra": {
                     "recommend": _recommend_tag.text,
                     "view": _view_tag.text,
-                }
+                },
             }
             # 제목에 ["품절", "종료", "매진", "마감"] 네 단어가 들어간 경우 핫딜이 종료된 것으로 판단
             for kw in ["품절", "종료", "매진", "마감"]:

@@ -4,6 +4,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Iterable
 from typing import Any, Generic, Literal, TypedDict, TypeVar
 
+import logfire
 import telegram
 
 from src.crawler.base_crawler import BaseArticle
@@ -30,6 +31,7 @@ class SerializedBotData(TypedDict, Generic[MessageType]):
     queue: 봇이 아직 처리하지 않은 메시지들의 큐
     cache: 봇 객체에서 저장중인 메시지 객체 목록. {crawler_name(str): {id(int): (MessageType)}} 형태
     """
+
     queue: list[tuple[Literal["send", "edit", "delete"], BaseArticle]]
     cache: dict[str, dict[int, MessageType]]
 
@@ -244,8 +246,7 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
             await self.queue.put(("delete", data))
 
     async def to_dict(self) -> SerializedBotData:
-        """메시지 목록 및 작업 큐 직렬화. 만약 메시지 객체의 직렬화 및 역직렬화가 불가능하다면 value가 비어있는 딕셔너리를 반환하도록 오버라이드 할 것.
-        """
+        """메시지 목록 및 작업 큐 직렬화. 만약 메시지 객체의 직렬화 및 역직렬화가 불가능하다면 value가 비어있는 딕셔너리를 반환하도록 오버라이드 할 것."""
         # WARNING: This method consumes all objects in queue.
         # Must call after consumer task is stopped.
         await self.stop_consumer()
@@ -278,6 +279,7 @@ class DummyBot(BaseBot):
     Args:
         name (str): 봇 이름
     """
+
     def __init__(self, name: str) -> None:
         super().__init__(name)
 
@@ -311,23 +313,44 @@ class TelegramBot(BaseBot[telegram.Message]):
     async def _send(self, data: BaseArticle, retry: bool = False) -> telegram.Message | None:
         kwargs = self._make_message(data)
         msg = None
-        try:
-            msg = await self.bot.send_message(chat_id=self.target, **kwargs)
-            self.logger.debug(f"Message send to {self.target} {msg.message_id}")
-        except telegram.error.RetryAfter as e:
-            self.logger.warning("Retry send message after {t} secs: ({e}): {title} ({url}) -> {target}".format(e=e, t=e.retry_after, target=self.target, **data))
-            await asyncio.sleep(e.retry_after)
-            msg = await self._send(data, retry=False)
-        except telegram.error.TimedOut as e:
-            self.logger.error("Send message timeout ({e}): {title} ({url}) -> {target}".format(e=e, target=self.target, **data))
-        except telegram.error.TelegramError as e:
-            self.logger.error("Send message failed: {e.__name__} ({e}): {title} ({url}) -> {target}".format(e=e, target=self.target, **data))
-        finally:
-            if msg is None and retry:
+
+        with logfire.span("telegram_send_message", article_title=data.get("title", ""), target=self.target):
+            try:
+                msg = await self.bot.send_message(chat_id=self.target, **kwargs)
+                self.logger.debug(f"Message send to {self.target} {msg.message_id}")
+                logfire.info(
+                    "Message sent successfully",
+                    chat_id=self.target,
+                    message_id=msg.message_id,
+                    article_title=data.get("title", ""),
+                )
+            except telegram.error.RetryAfter as e:
+                self.logger.warning(
+                    "Retry send message after {t} secs: ({e}): {title} ({url}) -> {target}".format(
+                        e=e, t=e.retry_after, target=self.target, **data
+                    )
+                )
+                logfire.warn("Rate limited, retrying", retry_after=e.retry_after, target=self.target)
+                await asyncio.sleep(e.retry_after)
                 msg = await self._send(data, retry=False)
-            if msg is not None:
-                await self.set_msg_obj(data, msg)
-            return msg
+            except telegram.error.TimedOut as e:
+                self.logger.error(
+                    "Send message timeout ({e}): {title} ({url}) -> {target}".format(e=e, target=self.target, **data)
+                )
+                logfire.error("Send message timeout", error=str(e), target=self.target)
+            except telegram.error.TelegramError as e:
+                self.logger.error(
+                    "Send message failed: {e.__name__} ({e}): {title} ({url}) -> {target}".format(
+                        e=e, target=self.target, **data
+                    )
+                )
+                logfire.error("Telegram error", error=str(e), error_type=e.__class__.__name__, target=self.target)
+            finally:
+                if msg is None and retry:
+                    msg = await self._send(data, retry=False)
+                if msg is not None:
+                    await self.set_msg_obj(data, msg)
+                return msg
 
     async def _edit(self, data: BaseArticle, retry: bool = False):
         msg = await self.get_msg_obj(data)
@@ -338,15 +361,27 @@ class TelegramBot(BaseBot[telegram.Message]):
             kwargs = self._make_message(data)
             await msg.edit_text(**kwargs)
         except telegram.error.RetryAfter as e:
-            self.logger.warning("Retry edit message after {t} secs: ({e}): {title} ({url}) <- {msg_id}".format(e=e, t=e.retry_after, msg_id=msg.message_id, **data))
+            self.logger.warning(
+                "Retry edit message after {t} secs: ({e}): {title} ({url}) <- {msg_id}".format(
+                    e=e, t=e.retry_after, msg_id=msg.message_id, **data
+                )
+            )
             await asyncio.sleep(e.retry_after)
             await self._edit(data, retry=False)
         except telegram.error.TimedOut as e:
-            self.logger.error("Edit message timeout ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data))
+            self.logger.error(
+                "Edit message timeout ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data)
+            )
         except telegram.error.BadRequest as e:
-            self.logger.error("Edit message failed ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data))
+            self.logger.error(
+                "Edit message failed ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data)
+            )
         except telegram.error.TelegramError as e:
-            self.logger.error("Edit message failed: {e.__name__} ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data))
+            self.logger.error(
+                "Edit message failed: {e.__name__} ({e}): {title} ({url}) <- {msg_id}".format(
+                    e=e, msg_id=msg.message_id, **data
+                )
+            )
 
     async def _delete(self, data: BaseArticle):
         """메시지 객체를 찾은 다음, 텔레그램 채널의 메시지를 삭제"""
@@ -358,9 +393,15 @@ class TelegramBot(BaseBot[telegram.Message]):
         try:
             await msg.delete()
         except telegram.error.BadRequest as e:
-            self.logger.error("Delete message failed ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data))
+            self.logger.error(
+                "Delete message failed ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data)
+            )
         except telegram.error.TelegramError as e:
-            self.logger.error("Delete message failed: {e.__name__} ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data))
+            self.logger.error(
+                "Delete message failed: {e.__name__} ({e}): {title} ({url}) <- {msg_id}".format(
+                    e=e, msg_id=msg.message_id, **data
+                )
+            )
 
     async def from_dict(self, data: SerializedBotData) -> None:
         """메시지 목록 및 작업 큐 역직렬화
@@ -397,12 +438,10 @@ class TelegramBot(BaseBot[telegram.Message]):
                 md += escape_markdown("\n{price} / {delivery} (직배 불가능)".format(**d["extra"]))
         if d["is_end"]:
             md = f"~{md}~"
-        btn = [
-            [telegram.InlineKeyboardButton("자세히 보기 ({site_name} {board_name})".format(**d), d["url"])]
-        ]
+        btn = [[telegram.InlineKeyboardButton("자세히 보기 ({site_name} {board_name})".format(**d), d["url"])]]
         result = {
             "text": md,
             "reply_markup": telegram.InlineKeyboardMarkup(btn),
-            "parse_mode": telegram.constants.ParseMode.MARKDOWN_V2
+            "parse_mode": telegram.constants.ParseMode.MARKDOWN_V2,
         }
         return result
