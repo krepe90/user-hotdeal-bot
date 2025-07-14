@@ -138,3 +138,6 @@ config.yaml
 dump.json
 log/
 error/
+
+# claude
+*.local.json
