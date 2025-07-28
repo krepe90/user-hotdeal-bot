@@ -472,16 +472,16 @@ class BotManager:
 
     async def run(self):
         """크롤링 및 메시지 전송 작업을 주어진 시간(60초)마다 한번씩 영원히 반복"""
-        await self.init_session()
+        with logfire.span("init_application"):
+            await self.init_session()
         self.logger.info("Loop start")
         loop = asyncio.get_running_loop()
         while not self.closed:
-            self.logger.debug("Task start")
             loop.create_task(self._run())
-            self.logger.debug("Task end, sleep")
             await asyncio.sleep(60)
         self.logger.debug("Loop stop (bot closed)")
 
+    @logfire.instrument("close_application")
     async def close(self):
         """세션 닫기, 크롤러, 봇 닫기, 데이터 저장"""
         if self.closed:
