@@ -50,6 +50,7 @@ configure_options = {
     "service_name": logfire_config.get("service_name", "user-hotdeal-bot"),
     "service_version": __version__,
     "send_to_logfire": logfire_enabled,
+    "environment": logfire_config.get("environment", "production"),
 }
 if not logfire_enabled:
     configure_options["console"] = logfire.ConsoleOptions(

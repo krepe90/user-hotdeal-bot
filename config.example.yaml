@@ -84,6 +84,7 @@ logging:
 logfire:
   enabled: false  # Set to true to enable Logfire remote logging
   service_name: "user-hotdeal-bot"
+  environment: "production"  # local, development, staging, or production
   console:
     show_project_link: false
   # token: "your-logfire-token"  # Optional: for authentication
