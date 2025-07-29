@@ -82,7 +82,7 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
             return
         if article_id not in self.cache[crawler_name]:
             return
-        self.logger.debug(f"Removed message object ({article_id})")
+        self.logger.debug("Removed message object (%s)", article_id)
         self.cache[crawler_name].pop(article_id, None)
 
     async def remove_expired_msg_obj(self, crawler_name: str, id_min: int):
@@ -93,14 +93,14 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
             id_min: 삭제할 메시지 객체의 id의 최솟값
         """
         if crawler_name not in self.cache:
-            self.logger.debug(f"Cache for {crawler_name} not found")
+            self.logger.debug("Cache for %s not found", crawler_name)
             self.cache[crawler_name] = {}
             return
         messages = self.cache[crawler_name]
         remove_list = [i for i in messages.keys() if i < id_min]
         for article_id in remove_list:
             messages.pop(article_id, None)
-            self.logger.debug(f"Removed expired message object ({crawler_name}/{article_id})")
+            self.logger.debug("Removed expired message object (%s/%s)", crawler_name, article_id)
 
     async def consumer(self):
         """메시지 전송 작업을 처리하는 코루틴. 큐에 아이템이 들어오면 해당 아이템을 처리.
@@ -114,7 +114,7 @@ class BaseBot(Generic[MessageType], metaclass=ABCMeta):
                     await asyncio.sleep(1)
                     continue
                 item = await self.queue.get()
-                self.logger.debug(f"Consumer task got item: <{item[1]['crawler_name']}.{item[0]}> {item[1]['title']}")
+                self.logger.debug("Consumer task got item: <%s.%s> %s", item[1]['crawler_name'], item[0], item[1]['title'])
                 try:
                     match item[0]:
                         case "send":
@@ -284,14 +284,14 @@ class DummyBot(BaseBot):
         super().__init__(name)
 
     async def _send(self, data: BaseArticle) -> None:
-        self.logger.debug(f"Send message: {data['crawler_name']}.{data['article_id']}")
+        self.logger.debug("Send message: %s.%s", data['crawler_name'], data['article_id'])
         await self.set_msg_obj(data, data["title"])
 
     async def _edit(self, data: BaseArticle) -> None:
-        self.logger.debug(f"Edit message: {data['crawler_name']}.{data['article_id']}")
+        self.logger.debug("Edit message: %s.%s", data['crawler_name'], data['article_id'])
 
     async def _delete(self, data: BaseArticle) -> None:
-        self.logger.debug(f"Delete message: {data['crawler_name']}.{data['article_id']}")
+        self.logger.debug("Delete message: %s.%s", data['crawler_name'], data['article_id'])
         await self.remove_msg_obj(data["crawler_name"], data["article_id"])
 
     async def from_dict(self, data: SerializedBotData) -> None:
@@ -317,7 +317,7 @@ class TelegramBot(BaseBot[telegram.Message]):
         with logfire.span("telegram_send_message", article_title=data.get("title", ""), target=self.target):
             try:
                 msg = await self.bot.send_message(chat_id=self.target, **kwargs)
-                self.logger.debug(f"Message send to {self.target} {msg.message_id}")
+                self.logger.debug("Message send to %s %s", self.target, msg.message_id)
                 logfire.info(
                     "Message sent successfully",
                     chat_id=self.target,
@@ -416,7 +416,7 @@ class TelegramBot(BaseBot[telegram.Message]):
             for msg_id, msg in msg_data.items():
                 msg_obj = telegram.Message.de_json(msg, self.bot)
                 if msg_obj is None:
-                    self.logger.warning(f"Failed to deserialize message object: {crawler_name}/{msg_id}")
+                    self.logger.warning("Failed to deserialize message object: %s/%s", crawler_name, msg_id)
                     continue
                 self.cache[crawler_name][int(msg_id)] = msg_obj
         # queue

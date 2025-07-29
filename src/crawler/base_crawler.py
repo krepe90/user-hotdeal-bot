@@ -109,18 +109,18 @@ class BaseCrawler(metaclass=ABCMeta):
         Returns:
             aiohttp.ClientResponse | None: 응답 객체 (실패한 경우 None 반환)
         """
-        self.logger.debug(f"Send request to {url}")
+        self.logger.debug("Send request to %s", url)
         try:
             resp = await self.session.get(url, allow_redirects=False)
         except aiohttp.ServerTimeoutError as e:
-            self.logger.error(f"Client connection timeout error: {e} ({url})")
+            self.logger.error("Client connection timeout error: %s (%s)", e, url)
             return
         except aiohttp.ClientError as e:
-            self.logger.error(f"Client connection error: {e} ({url})")
+            self.logger.error("Client connection error: %s (%s)", e, url)
             return
         except asyncio.TimeoutError as e:
             # ServerTimeoutError 하고 이게 뭐가 다른거지?
-            self.logger.error(f"Asyncio timeout error: {e} ({url})")
+            self.logger.error("Asyncio timeout error: %s (%s)", e, url)
             return
         return resp
 
@@ -139,16 +139,16 @@ class BaseCrawler(metaclass=ABCMeta):
             if resp is not None:
                 break
         else:
-            self.logger.error(f"Client connection failed: {url}")
+            self.logger.error("Client connection failed: %s", url)
             return
 
         async with resp:
             if resp.status != 200:
                 if resp.status != self._prev_status:
-                    self.logger.error(f"Client response error: {resp.status} ({url})")
+                    self.logger.error("Client response error: %s (%s)", resp.status, url)
                     await self.dump_http_response(resp)
                 else:
-                    self.logger.info(f"Client response error [skip]: {resp.status} ({url})")
+                    self.logger.info("Client response error [skip]: %s (%s)", resp.status, url)
                 self._prev_status = resp.status
                 return
             else:
@@ -199,4 +199,4 @@ class BaseCrawler(metaclass=ABCMeta):
 
         with open(filename, "wb") as f:
             f.write(await resp.read())
-            self.logger.debug(f"Dumped response binary to {filename}")
+            self.logger.debug("Dumped response binary to %s", filename)

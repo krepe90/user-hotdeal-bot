@@ -144,34 +144,34 @@ class BotManager:
         for crawler_name, crawler_config in crawlers.items():
             # 활성화 여부 확인
             if not crawler_config["enabled"]:
-                self.logger.info(f"Crawler disabled: {crawler_name}")
+                self.logger.info("Crawler disabled: %s", crawler_name)
                 continue
             if crawler_name in _crawlers_old:
                 _cwr = _crawlers_old.pop(crawler_name)
                 # 설정이 동일한 경우 재사용
                 if _cwr.url_list == crawler_config["url_list"] and _cwr.cls_name == crawler_config["crawler_name"]:
                     self.crawlers[crawler_name] = _cwr
-                    self.logger.info(f"Crawler reused: {crawler_name} ({crawler_config['crawler_name']})")
+                    self.logger.info("Crawler reused: %s (%s)", crawler_name, crawler_config['crawler_name'])
                     continue
                 # 설정이 달라진 경우 새로 생성
                 else:
-                    self.logger.info(f"Config changed: {crawler_name}")
+                    self.logger.info("Config changed: %s", crawler_name)
             crawler_cls_name = crawler_config["crawler_name"]
             crawler_cls = getattr(crawler, crawler_cls_name, None)
             if crawler_cls is None:
-                self.logger.warning(f"Unknown crawler class: {crawler_cls_name}")
+                self.logger.warning("Unknown crawler class: %s", crawler_cls_name)
                 continue
             if not issubclass(crawler_cls, crawler.BaseCrawler):
-                self.logger.warning(f"Invalid crawler class: {crawler_cls_name}")
+                self.logger.warning("Invalid crawler class: %s", crawler_cls_name)
                 continue
             # 크롤러 객체 생성
             self.crawlers[crawler_name] = crawler_cls(crawler_name, crawler_config["url_list"], self.session)
-            self.logger.info(f"Crawler initialized: {crawler_name} ({crawler_cls_name})")
+            self.logger.info("Crawler initialized: %s (%s)", crawler_name, crawler_cls_name)
         # 남은 크롤러 객체 목록 출력 (삭제될 크롤러)
         for k, v in _crawlers_old.items():
             # GC가 알아서 할테니 별도 처리는 X (세션은 다 같이 쓰고 있기 떄문에 닫으면 안됨)
-            self.logger.info(f"Crawler removed or disabled: {k} ({v.cls_name})")
-        self.logger.info(f"{len(self.crawlers)} crawler(s) initialized")
+            self.logger.info("Crawler removed or disabled: %s (%s)", k, v.cls_name)
+        self.logger.info("%d crawler(s) initialized", len(self.crawlers))
 
     async def init_bots(self, bots: dict[str, BotConfig]):
         """봇 객체 생성/재사용/초기화 등 수행
@@ -185,34 +185,34 @@ class BotManager:
             bot_cls_name = bot_config["bot_name"]
             bot_cls = getattr(bot, bot_cls_name, None)
             if bot_cls is None:
-                self.logger.warning(f"Unknown bot class: {bot_cls_name}")
+                self.logger.warning("Unknown bot class: %s", bot_cls_name)
                 continue
             if not issubclass(bot_cls, bot.BaseBot):
-                self.logger.warning(f"Invalid bot class: {bot_cls_name}")
+                self.logger.warning("Invalid bot class: %s", bot_cls_name)
                 continue
             if not bot_config["enabled"]:
-                self.logger.info(f"Bot disabled: {bot_name}")
+                self.logger.info("Bot disabled: %s", bot_name)
                 continue
             if bot_name in _bots_old:
                 _bot = _bots_old.pop(bot_name)
                 # 설정까지 동일한 경우 재사용
                 if _bot.cls_name == bot_cls_name and _bot.config == bot_config["kwargs"]:
                     self.bots[bot_name] = _bot
-                    self.logger.info(f"Bot reused: {bot_name} ({bot_cls_name})")
+                    self.logger.info("Bot reused: %s (%s)", bot_name, bot_cls_name)
                     # 봇 consumer task 재시작
                     await _bot.check_consumer(no_warning=True)
                     continue
                 # 설정이 바뀐 경우
                 else:
                     await _bot.close()
-                    self.logger.info(f"Config changed: {bot_name}")
+                    self.logger.info("Config changed: %s", bot_name)
             self.bots[bot_name] = bot_cls(name=bot_name, **bot_config["kwargs"])
-            self.logger.info(f"Bot initialized: {bot_name} ({bot_cls_name})")
+            self.logger.info("Bot initialized: %s (%s)", bot_name, bot_cls_name)
         # 기존 봇 객체들 삭제
         for bot_name, bot_obj in _bots_old.items():
             await bot_obj.close()
-            self.logger.info(f"Bot removed or disabled: {bot_name} ({bot_obj.cls_name})")
-        self.logger.info(f"{len(self.bots)} bot(s) initialized")
+            self.logger.info("Bot removed or disabled: %s (%s)", bot_name, bot_obj.cls_name)
+        self.logger.info("%d bot(s) initialized", len(self.bots))
 
     async def deserialize_articles(self, crawler_data: dict[str, crawler.ArticleCollection]):
         """dump 파일로부터 게시글 정보 역직렬화 및 메모리에 저장
@@ -225,12 +225,12 @@ class BotManager:
         for crawler_name, crawler_obj in crawler_data.items():
             # 현재 로딩된 크롤러가 아닌 크롤러의 정보가 들어온 경우 경고
             if crawler_name not in self.crawlers.keys():
-                self.logger.warning(f"Unknown crawler name in dump file: {crawler_name}")
+                self.logger.warning("Unknown crawler name in dump file: %s", crawler_name)
             # ArticleCollection 객체로 변환 후 self.article_cache 에 저장
             # 변환 시 str 형식으로 되어있던 key들을 자동으로 int 형식으로 변환 (__setitem__ 참고)
             self.article_cache[crawler_name] = crawler.ArticleCollection(crawler_obj)
             # logging
-            self.logger.info(f"{crawler_name}: {len(self.article_cache[crawler_name])} article(s) loaded")
+            self.logger.info("%s: %d article(s) loaded", crawler_name, len(self.article_cache[crawler_name]))
             self.logger.debug(
                 f"{crawler_name}: article_id range: [{min(self.article_cache[crawler_name], default=0)}, {max(self.article_cache[crawler_name], default=0)}]"
             )
@@ -246,14 +246,14 @@ class BotManager:
         self.logger.info("Bot dump data deserialize start")
         for bot_name, bot_dump in bot_data.items():
             if bot_name not in self.bots.keys():
-                self.logger.warning(f"Unknown bot name in dump file: {bot_name}")
+                self.logger.warning("Unknown bot name in dump file: %s", bot_name)
                 continue
             # 각 봇에서 구현하는 from_dict 메서드가 각각 수행
             await self.bots[bot_name].from_dict(bot_dump)
             loaded_messages = sum(len(n) for n in self.bots[bot_name].cache)
-            self.logger.info(f"{bot_name}: {loaded_messages} message(s) loaded")
+            self.logger.info("%s: %d message(s) loaded", bot_name, loaded_messages)
             loaded_queue = self.bots[bot_name].queue.qsize()
-            self.logger.info(f"{bot_name}: {loaded_queue} message(s) queued")
+            self.logger.info("%s: %d message(s) queued", bot_name, loaded_queue)
         self.logger.info("Bot dump data deserialize complete")
 
     async def load(self, config_file_path: str = "config.yaml", dump_file_path: str = "dump.json"):
@@ -280,7 +280,7 @@ class BotManager:
         try:
             config: Config = load_config_file(config_file_path)
         except (yaml.YAMLError, json.JSONDecodeError) as e:
-            self.logger.error(f"Config file decode error occurred: {e}")
+            self.logger.error("Config file decode error occurred: %s", e)
             return
         # 크롤러 초기화
         await self.init_crawlers(config["crawlers"])
@@ -303,7 +303,7 @@ class BotManager:
             self.logger.error("Dump JSON file decode error occured")
             return
 
-        self.logger.info(f"App version {__version__}, dump file version {data['version']}")
+        self.logger.info("App version %s, dump file version %s", __version__, data['version'])
 
         # 크롤러가 파싱했던 게시글 정보 불러오기
         await self.deserialize_articles(data["crawler"])
@@ -348,15 +348,15 @@ class BotManager:
             return result
         # 글 번호 최소
         id_min: int = min(recent_data.keys())
-        self.logger.debug(f"{cwr.__class__.__name__}: {len(recent_data)} article(s) crawled")
-        self.logger.debug(f"{cwr.__class__.__name__}: article_id range: [{id_min}, {max(recent_data.keys())}]")
+        self.logger.debug("%s: %d article(s) crawled", cwr.__class__.__name__, len(recent_data))
+        self.logger.debug("%s: article_id range: [%d, %d]", cwr.__class__.__name__, id_min, max(recent_data.keys()))
 
         # 초기화
         if name not in self.article_cache:
             self.article_cache[name] = crawler.ArticleCollection()
         if not self.article_cache[name]:
             self.article_cache[name].update(recent_data)
-            self.logger.info(f"{cwr.__class__.__name__}: Article cache initialized, skip crawling")
+            self.logger.info("%s: Article cache initialized, skip crawling", cwr.__class__.__name__)
             return result
 
         # 글 목록 페이지 뒤로 넘어가 추적하지 않게 된 게시글들 메모리에서 삭제
@@ -424,7 +424,7 @@ class BotManager:
             f"Result: {crawling_time:.2f}s, {len(result['new'])}/{len(result['update'])}/{len(result['remove'])}"
         )
         if crawling_time > 30:
-            self.logger.warning(f"Crawling time took so long: {crawling_time}")
+            self.logger.warning("Crawling time took so long: %s", crawling_time)
 
         # Logfire 메트릭 로깅
         logfire.info(
@@ -492,12 +492,12 @@ class BotManager:
         self.logger.info("session close start")
         # 크롤러 세션 닫기
         for k, cwr in self.crawlers.items():
-            self.logger.debug(f"cralwer close: {k}")
+            self.logger.debug("cralwer close: %s", k)
             if not cwr.session.closed:
                 await cwr.close()
         # 봇 세션 닫기
         for bot_name, bot_instance in self.bots.items():
-            self.logger.debug(f"bot close: {bot_name}")
+            self.logger.debug("bot close: %s", bot_name)
             await bot_instance.close()
         # 데이터 저장
         self.logger.info("data dump start")
