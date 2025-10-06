@@ -37,7 +37,7 @@ def load_config_file(config_path: str = "config.yaml") -> "Config":
 
 
 # 통합 설정 파일에서 로깅 설정 로드
-_config = load_config_file()
+_config: "Config" = load_config_file()
 if "logging" in _config:
     logging.config.dictConfig(_config["logging"])
 
@@ -112,10 +112,126 @@ class CrawlingResult(TypedDict):
     remove: list[crawler.BaseArticle]
 
 
+class PersistenceManager:
+    """데이터 영속성 관리 클래스 - ArticleCollection 기반 직렬화/역직렬화"""
+
+    def __init__(self):
+        self.logger = logging.getLogger("PersistenceManager")
+
+    async def deserialize_articles(
+        self, crawler_data: dict[str, crawler.ArticleCollection], crawlers: dict[str, crawler.BaseCrawler]
+    ) -> dict[str, crawler.ArticleCollection]:
+        """dump 파일로부터 게시글 정보 역직렬화
+
+        Args:
+            crawler_data: 크롤러가 파싱한 게시글 정보
+            crawlers: 현재 로딩된 크롤러 목록
+
+        Returns:
+            dict[str, crawler.ArticleCollection]: 역직렬화된 게시글 캐시
+        """
+        self.logger.info("Article dump data deserialize start")
+        article_cache: dict[str, crawler.ArticleCollection] = {}
+
+        for crawler_name, crawler_obj in crawler_data.items():
+            if crawler_name not in crawlers.keys():
+                self.logger.warning("Unknown crawler name in dump file: %s", crawler_name)
+
+            article_cache[crawler_name] = crawler.ArticleCollection(crawler_obj)
+            self.logger.info("%s: %d article(s) loaded", crawler_name, len(article_cache[crawler_name]))
+            self.logger.debug(
+                f"{crawler_name}: article_id range: [{min(article_cache[crawler_name], default=0)}, {max(article_cache[crawler_name], default=0)}]"
+            )
+
+        # 크롤러는 등록되어 있으나, 게시글 데이터가 없어 초기화가 필요한 경우
+        for crawler_name in crawlers.keys():
+            if crawler_name not in article_cache.keys():
+                article_cache[crawler_name] = crawler.ArticleCollection()
+
+        self.logger.info("Article dump data deserialize complete")
+        return article_cache
+
+    async def deserialize_bots(self, bot_data: dict[str, bot.SerializedBotData], bots: dict[str, bot.BaseBot]):
+        """dump 파일로부터 봇 및 봇 메시지 정보 역직렬화
+
+        Args:
+            bot_data: 봇 관련 정보
+            bots: 현재 로딩된 봇 목록
+        """
+        self.logger.info("Bot dump data deserialize start")
+        for bot_name, bot_dump in bot_data.items():
+            if bot_name not in bots.keys():
+                self.logger.warning("Unknown bot name in dump file: %s", bot_name)
+                continue
+
+            await bots[bot_name].from_dict(bot_dump)
+            loaded_messages = sum(len(n) for n in bots[bot_name].cache)
+            self.logger.info("%s: %d message(s) loaded", bot_name, loaded_messages)
+            loaded_queue = bots[bot_name].queue.qsize()
+            self.logger.info("%s: %d message(s) queued", bot_name, loaded_queue)
+        self.logger.info("Bot dump data deserialize complete")
+
+    async def load_data(
+        self, dump_file_path: str, crawlers: dict[str, crawler.BaseCrawler], bots: dict[str, bot.BaseBot]
+    ) -> dict[str, crawler.ArticleCollection]:
+        """주어진 경로의 json 파일로부터 데이터 로드
+
+        Args:
+            dump_file_path: 데이터 파일 경로
+            crawlers: 현재 로딩된 크롤러 목록
+            bots: 현재 로딩된 봇 목록
+
+        Returns:
+            dict[str, crawler.ArticleCollection]: 로드된 게시글 캐시
+        """
+        if not os.path.isfile(dump_file_path):
+            self.logger.warning("Dump file doesn't exists")
+            # 빈 article_cache 초기화
+            return {crawler_name: crawler.ArticleCollection() for crawler_name in crawlers.keys()}
+
+        try:
+            with open(dump_file_path, "r", encoding="utf-8") as f:
+                data: DumpedData = json.load(f)
+        except json.JSONDecodeError:
+            self.logger.error("Dump JSON file decode error occured")
+            return {crawler_name: crawler.ArticleCollection() for crawler_name in crawlers.keys()}
+
+        self.logger.info("App version %s, dump file version %s", __version__, data["version"])
+
+        # 게시글 정보 역직렬화
+        article_cache = await self.deserialize_articles(data["crawler"], crawlers)
+        # 봇 정보 역직렬화
+        await self.deserialize_bots(data["bot"], bots)
+
+        return article_cache
+
+    async def dump_data(
+        self,
+        article_cache: dict[str, crawler.ArticleCollection],
+        bots: dict[str, bot.BaseBot],
+        dump_file_path: str = "dump.json",
+    ):
+        """데이터를 지정한 경로의 json 파일에 저장
+
+        Args:
+            article_cache: 게시글 캐시
+            bots: 봇 목록
+            dump_file_path: 데이터 파일 경로
+        """
+        dump = {
+            "version": __version__,
+            "crawler": article_cache,
+            "bot": {bot_name: await bot_obj.to_dict() for bot_name, bot_obj in bots.items()},
+        }
+        with open(dump_file_path, "w", encoding="utf-8") as f:
+            json.dump(dump, f, ensure_ascii=False, indent=2, default=bot.message_serializer)
+
+
 class BotManager:
     def __init__(self):
         self.logger = logging.getLogger("BotManager")
         self.closed = False
+        self.persistence = PersistenceManager()
 
     async def init_session(self):
         """세션 초기화"""
@@ -151,7 +267,7 @@ class BotManager:
                 # 설정이 동일한 경우 재사용
                 if _cwr.url_list == crawler_config["url_list"] and _cwr.cls_name == crawler_config["crawler_name"]:
                     self.crawlers[crawler_name] = _cwr
-                    self.logger.info("Crawler reused: %s (%s)", crawler_name, crawler_config['crawler_name'])
+                    self.logger.info("Crawler reused: %s (%s)", crawler_name, crawler_config["crawler_name"])
                     continue
                 # 설정이 달라진 경우 새로 생성
                 else:
@@ -214,48 +330,6 @@ class BotManager:
             self.logger.info("Bot removed or disabled: %s (%s)", bot_name, bot_obj.cls_name)
         self.logger.info("%d bot(s) initialized", len(self.bots))
 
-    async def deserialize_articles(self, crawler_data: dict[str, crawler.ArticleCollection]):
-        """dump 파일로부터 게시글 정보 역직렬화 및 메모리에 저장
-
-        Args:
-            crawler_data (dict[str, crawler.ArticleCollection]): 크롤러가 파싱한 게시글 정보
-        """
-        self.logger.info("Article dump data deserialize start")
-        # 크롤러가 파싱한 게시글 정보 불러오기
-        for crawler_name, crawler_obj in crawler_data.items():
-            # 현재 로딩된 크롤러가 아닌 크롤러의 정보가 들어온 경우 경고
-            if crawler_name not in self.crawlers.keys():
-                self.logger.warning("Unknown crawler name in dump file: %s", crawler_name)
-            # ArticleCollection 객체로 변환 후 self.article_cache 에 저장
-            # 변환 시 str 형식으로 되어있던 key들을 자동으로 int 형식으로 변환 (__setitem__ 참고)
-            self.article_cache[crawler_name] = crawler.ArticleCollection(crawler_obj)
-            # logging
-            self.logger.info("%s: %d article(s) loaded", crawler_name, len(self.article_cache[crawler_name]))
-            self.logger.debug(
-                f"{crawler_name}: article_id range: [{min(self.article_cache[crawler_name], default=0)}, {max(self.article_cache[crawler_name], default=0)}]"
-            )
-        self.logger.info("Article dump data deserialize complete")
-
-    async def deserialize_bots(self, bot_data: dict[str, bot.SerializedBotData]):
-        """dump 파일로부터 봇 및 봇 메시지 정보 역직렬화 및 메모리에 저장
-
-        Args:
-            bot_data (dict[str, bot.SerializedBotData]): 봇 관련 정보
-        """
-        # 봇 정보 및 봇이 보냈던/보내야 할 메시지 정보 불러오기
-        self.logger.info("Bot dump data deserialize start")
-        for bot_name, bot_dump in bot_data.items():
-            if bot_name not in self.bots.keys():
-                self.logger.warning("Unknown bot name in dump file: %s", bot_name)
-                continue
-            # 각 봇에서 구현하는 from_dict 메서드가 각각 수행
-            await self.bots[bot_name].from_dict(bot_dump)
-            loaded_messages = sum(len(n) for n in self.bots[bot_name].cache)
-            self.logger.info("%s: %d message(s) loaded", bot_name, loaded_messages)
-            loaded_queue = self.bots[bot_name].queue.qsize()
-            self.logger.info("%s: %d message(s) queued", bot_name, loaded_queue)
-        self.logger.info("Bot dump data deserialize complete")
-
     async def load(self, config_file_path: str = "config.yaml", dump_file_path: str = "dump.json"):
         """주어진 경로의 설정 파일로부터 설정 및 데이터 로드
 
@@ -265,7 +339,7 @@ class BotManager:
         """
         # 설정 및 데이터 로드
         await self.load_config(config_file_path)
-        await self.load_data(dump_file_path)
+        self.article_cache = await self.persistence.load_data(dump_file_path, self.crawlers, self.bots)
 
     async def load_config(self, config_file_path: str = "config.yaml"):
         """주어진 경로의 설정 파일로부터 설정 로드, 크롤러 및 봇 초기화
@@ -287,47 +361,13 @@ class BotManager:
         # 메신저 봇 초기화
         await self.init_bots(config["bots"])
 
-    async def load_data(self, dump_file_path: str = "dump.json"):
-        """주어진 경로의 json 파일로부터 데이터 로드
-
-        Args:
-            dump_file_path (str, optional): 데이터 파일 경로, 기본값은 "dump.json"
-        """
-        if not os.path.isfile(dump_file_path):
-            self.logger.warning("Dump file doesn't exists")
-            return
-        try:
-            with open(dump_file_path, "r", encoding="utf-8") as f:
-                data: DumpedData = json.load(f)
-        except json.JSONDecodeError:
-            self.logger.error("Dump JSON file decode error occured")
-            return
-
-        self.logger.info("App version %s, dump file version %s", __version__, data['version'])
-
-        # 크롤러가 파싱했던 게시글 정보 불러오기
-        await self.deserialize_articles(data["crawler"])
-        # 봇 정보 및 봇이 보냈던/보내야 할 메시지 정보 불러오기
-        await self.deserialize_bots(data["bot"])
-        # article_cache 키 값 추가 설정
-        # 크롤러는 등록되어 있으나, 게시글 데이터가 없어 초기화가 필요한 경우 사용
-        for crawler_name in self.crawlers.keys():
-            if crawler_name not in self.article_cache.keys():
-                self.article_cache[crawler_name] = crawler.ArticleCollection()
-
     async def dump(self, dump_file_path: str = "dump.json"):
         """데이터를 지정한 경로의 json 파일에 저장
 
         Args:
             dump_file_path (str, optional): 데이터 파일 경로, 기본값은 "dump.json"
         """
-        dump = {
-            "version": __version__,
-            "crawler": self.article_cache,
-            "bot": {bot_name: await bot.to_dict() for bot_name, bot in self.bots.items()},
-        }
-        with open(dump_file_path, "w", encoding="utf-8") as f:
-            json.dump(dump, f, ensure_ascii=False, indent=2, default=bot.message_serializer)
+        await self.persistence.dump_data(self.article_cache, self.bots, dump_file_path)
 
     async def _crawling(self, name: str, cwr: crawler.BaseCrawler) -> CrawlingResult:
         """크롤러 객체를 받아 크롤링 수행, 이후 새로운 게시글, 업데이트된 게시글, 삭제된 게시글을 각각 반환
