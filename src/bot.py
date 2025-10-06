@@ -326,23 +326,22 @@ class TelegramBot(BaseBot[telegram.Message]):
                 )
             except telegram.error.RetryAfter as e:
                 self.logger.warning(
-                    "Retry send message after {t} secs: ({e}): {title} ({url}) -> {target}".format(
-                        e=e, t=e.retry_after, target=self.target, **data
-                    )
+                    "Retry send message after %s secs: (%s): %s (%s) -> %s",
+                    e.retry_after, e, data["title"], data["url"], self.target
                 )
                 logfire.warn("Rate limited, retrying", retry_after=e.retry_after, target=self.target)
                 await asyncio.sleep(e.retry_after)
                 msg = await self._send(data, retry=False)
             except telegram.error.TimedOut as e:
                 self.logger.error(
-                    "Send message timeout ({e}): {title} ({url}) -> {target}".format(e=e, target=self.target, **data)
+                    "Send message timeout (%s): %s (%s) -> %s",
+                    e, data["title"], data["url"], self.target
                 )
                 logfire.error("Send message timeout", error=str(e), target=self.target)
             except telegram.error.TelegramError as e:
                 self.logger.error(
-                    "Send message failed: {e.__name__} ({e}): {title} ({url}) -> {target}".format(
-                        e=e, target=self.target, **data
-                    )
+                    "Send message failed: %s (%s): %s (%s) -> %s",
+                    e.__class__.__name__, e, data["title"], data["url"], self.target
                 )
                 logfire.error("Telegram error", error=str(e), error_type=e.__class__.__name__, target=self.target)
             finally:
@@ -355,52 +354,52 @@ class TelegramBot(BaseBot[telegram.Message]):
     async def _edit(self, data: BaseArticle, retry: bool = False):
         msg = await self.get_msg_obj(data)
         if msg is None:
-            self.logger.warning("Message not found: {title} ({url})".format(**data))
+            self.logger.warning("Message not found: %s (%s)", data["title"], data["url"])
             return
         try:
             kwargs = self._make_message(data)
             await msg.edit_text(**kwargs)
         except telegram.error.RetryAfter as e:
             self.logger.warning(
-                "Retry edit message after {t} secs: ({e}): {title} ({url}) <- {msg_id}".format(
-                    e=e, t=e.retry_after, msg_id=msg.message_id, **data
-                )
+                "Retry edit message after %s secs: (%s): %s (%s) <- %s",
+                e.retry_after, e, data["title"], data["url"], msg.message_id
             )
             await asyncio.sleep(e.retry_after)
             await self._edit(data, retry=False)
         except telegram.error.TimedOut as e:
             self.logger.error(
-                "Edit message timeout ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data)
+                "Edit message timeout (%s): %s (%s) <- %s",
+                e, data["title"], data["url"], msg.message_id
             )
         except telegram.error.BadRequest as e:
             self.logger.error(
-                "Edit message failed ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data)
+                "Edit message failed (%s): %s (%s) <- %s",
+                e, data["title"], data["url"], msg.message_id
             )
         except telegram.error.TelegramError as e:
             self.logger.error(
-                "Edit message failed: {e.__name__} ({e}): {title} ({url}) <- {msg_id}".format(
-                    e=e, msg_id=msg.message_id, **data
-                )
+                "Edit message failed: %s (%s): %s (%s) <- %s",
+                e.__class__.__name__, e, data["title"], data["url"], msg.message_id
             )
 
     async def _delete(self, data: BaseArticle):
         """메시지 객체를 찾은 다음, 텔레그램 채널의 메시지를 삭제"""
         msg = await self.get_msg_obj(data)
         if msg is None:
-            self.logger.warning("Message not found: {title} ({url})".format(**data))
+            self.logger.warning("Message not found: %s (%s)", data["title"], data["url"])
             return
 
         try:
             await msg.delete()
         except telegram.error.BadRequest as e:
             self.logger.error(
-                "Delete message failed ({e}): {title} ({url}) <- {msg_id}".format(e=e, msg_id=msg.message_id, **data)
+                "Delete message failed (%s): %s (%s) <- %s",
+                e, data["title"], data["url"], msg.message_id
             )
         except telegram.error.TelegramError as e:
             self.logger.error(
-                "Delete message failed: {e.__name__} ({e}): {title} ({url}) <- {msg_id}".format(
-                    e=e, msg_id=msg.message_id, **data
-                )
+                "Delete message failed: %s (%s): %s (%s) <- %s",
+                e.__class__.__name__, e, data["title"], data["url"], msg.message_id
             )
 
     async def from_dict(self, data: SerializedBotData) -> None:

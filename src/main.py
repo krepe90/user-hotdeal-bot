@@ -454,14 +454,15 @@ class BotManager:
         # logging
         if self.logger.isEnabledFor(logging.DEBUG):
             for article in result["new"]:
-                self.logger.debug("New: {title} ({url})".format(**article))
+                self.logger.debug("New: %s (%s)", article["title"], article["url"])
             for article in result["update"]:
-                self.logger.debug("Update: {title} ({url})".format(**article))
+                self.logger.debug("Update: %s (%s)", article["title"], article["url"])
             for article in result["remove"]:
-                self.logger.debug("Remove: {title} ({url})".format(**article))
+                self.logger.debug("Remove: %s (%s)", article["title"], article["url"])
         crawling_time = time.time() - st
         self.logger.info(
-            f"Result: {crawling_time:.2f}s, {len(result['new'])}/{len(result['update'])}/{len(result['remove'])}"
+            "Result: %.2fs, %d/%d/%d",
+            crawling_time, len(result['new']), len(result['update']), len(result['remove'])
         )
         if crawling_time > 30:
             self.logger.warning("Crawling time took so long: %s", crawling_time)
@@ -555,7 +556,7 @@ class BotManager:
 
 async def shutdown(sig: signal.Signals, bot: BotManager):
     """프로그램 종료 시그널 (sigterm, sigint) 핸들러"""
-    logger_status.info(f"Received exit signal {sig.name}")
+    logger_status.info("Received exit signal %s", sig.name)
     loop = asyncio.get_running_loop()
     # cloasing bot
     await bot.close()
@@ -568,7 +569,7 @@ async def shutdown(sig: signal.Signals, bot: BotManager):
 
 async def reload(sig: signal.Signals, bot: BotManager):
     """프로그램 재시작 시그널 (sighup) 핸들러"""
-    logger_status.info(f"Received reload signal {sig.name}")
+    logger_status.info("Received reload signal %s", sig.name)
     await bot.reload()
 
 
@@ -582,7 +583,7 @@ def main():
         # reload (SIGHUP)
         loop.add_signal_handler(signal.SIGHUP, lambda: asyncio.create_task(reload(signal.SIGHUP, bot)))
 
-    logger_status.info(f"hotdeal bot v{__version__} start!! (PID: {os.getpid()})")
+    logger_status.info("hotdeal bot v%s start!! (PID: %s)", __version__, os.getpid())
     logfire.info("Starting hotdeal bot", version=__version__, pid=os.getpid())
 
     try:
@@ -602,7 +603,7 @@ def main():
                 pass
         if not loop.is_closed():
             loop.close()
-    logger_status.info(f"hotdeal bot v{__version__} stopped!!")
+    logger_status.info("hotdeal bot v%s stopped!!", __version__)
     logfire.info("Hotdeal bot stopped", version=__version__)
 
 
