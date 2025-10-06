@@ -1,0 +1,11 @@
+services:
+  user-hotdeal-bot:
+    image: ghcr.io/krepe90/user-hotdeal-bot:latest
+    container_name: user-hotdeal-bot
+    restart: unless-stopped
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./log:/app/log
+      - ./dump.json:/app/dump.json
+    environment:
+      - TZ=Asia/Seoul

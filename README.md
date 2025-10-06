@@ -66,11 +66,11 @@ docker build -t user-hotdeal-bot .
 
 # run
 docker run -d --name user-hotdeal-bot \
-  -v ./config.yaml:/app/config.yaml \
+  -v ./config.yaml:/app/config.yaml:ro \
   -v ./log:/app/log \
+  -v ./dump.json:/app/dump.json \
   user-hotdeal-bot
 ```
-
 
 ## 구현 방식
 
