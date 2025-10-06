@@ -999,7 +999,7 @@ wheels = [
 
 [[package]]
 name = "user-hotdeal-bot"
-version = "2.1.4"
+version = "2.2.0"
 source = { virtual = "." }
 dependencies = [
     { name = "aiohttp" },

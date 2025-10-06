@@ -18,7 +18,7 @@ from src import (
     util,  # noqa: F401
 )
 
-__version__ = "2.1.4"
+__version__ = "2.2.0"
 
 
 HEADERS = {
@@ -461,8 +461,7 @@ class BotManager:
                 self.logger.debug("Remove: %s (%s)", article["title"], article["url"])
         crawling_time = time.time() - st
         self.logger.info(
-            "Result: %.2fs, %d/%d/%d",
-            crawling_time, len(result['new']), len(result['update']), len(result['remove'])
+            "Result: %.2fs, %d/%d/%d", crawling_time, len(result["new"]), len(result["update"]), len(result["remove"])
         )
         if crawling_time > 30:
             self.logger.warning("Crawling time took so long: %s", crawling_time)

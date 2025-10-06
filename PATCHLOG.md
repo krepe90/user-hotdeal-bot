@@ -1,5 +1,17 @@
 # PATCHLOG
 
+## v2.2.0 (2025-10-07)
+- 내부 구조 일부 개선
+  - JSON 대신 YAML 설정 파일 사용
+  - 로깅 개선
+- 도커 이미지 빌드 설정
+- logfire 적용
+- 기타 개발 환경 설정 개선
+
+> [!NOTE]
+> 기존 JSON 방식의 정상 작동을 보장하지 않습니다. YAML 파일 사용을 권장합니다.
+> `config.yaml` 파일 예시: [config.example.yaml](/config.example.yaml)
+
 ## v2.1.4 (2025-05-25)
 - 자잘한 버그 수정
 - 코드 리팩토링
