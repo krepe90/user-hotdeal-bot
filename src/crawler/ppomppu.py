@@ -38,9 +38,6 @@ class PpomppuCrawler(BaseCrawler):
             if (_writer_tag := row.select_one("a.baseList-name")) is None:
                 self.logger.warning("Cannot get article wrtier tag")
                 continue
-            if (_writer_tag_inner := _writer_tag.select_one("span,img")) is None:
-                self.logger.warning("Cannot get article writer")
-                continue
             if (_recommend_tag := row.select_one(".baseList-rec")) is None:
                 self.logger.warning("Cannot get article recommend tag")
                 continue
@@ -54,9 +51,13 @@ class PpomppuCrawler(BaseCrawler):
             else:
                 category_tag = _category_tag.text.strip(" []")
             _id = int(_id_tag.text.strip())
-            writer = (
-                _writer_tag_inner.text.strip() if _writer_tag_inner.name == "span" else _writer_tag_inner.attrs["alt"]
-            )
+            if (_writer_tag_inner := _writer_tag.select_one("img")) is not None:
+                writer = _writer_tag_inner.get("alt", "").strip()
+            else:
+                writer = _writer_tag.get_text(strip=True)
+            if not writer:
+                self.logger.warning("Cannot get article writer")
+                continue
             # 게시글 번호가 없는 경우 (== 다른 게시판 글인 경우) 스킵
             data[_id] = {
                 "article_id": _id,
