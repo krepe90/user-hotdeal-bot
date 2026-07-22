@@ -107,7 +107,7 @@ class PpomppuRSSCrawler(BaseCrawler):
                 continue
             board_url: str = _re_url.group(1)
             _id: int = int(_re_url.group(2))
-            comments, view, recommend, not_recommend = _hits_tag.text.strip("[]").split("|", 3)
+            comments, view, recommend, not_recommend = _hits_tag.text.strip().strip("[]").split("|", 3)
             data[_id] = {
                 "article_id": _id,
                 "title": _title_tag.text,
