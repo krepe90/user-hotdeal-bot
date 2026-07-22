@@ -61,3 +61,39 @@ async def test_ppomppu_rss_strips_whitespace_before_hits_fields():
         "recommend": "0",
         "not_recommend": "0",
     }
+
+
+@pytest.mark.asyncio
+async def test_fmkorea_parses_nested_ellipsis_title():
+    html = """
+    <div class="bd_tl"><h1><a href="/hotdeal">핫딜</a></h1></div>
+    <div id="content">
+      <div class="fm_best_widget">
+        <ul>
+          <li>
+            <h3 class="title">
+              <a href="/10118769542">
+                <span class="ellipsis-target">닌텐도 프로콘2</span>
+                <span class="comment_count">[3]</span>
+              </a>
+            </h3>
+            <div class="hotdeal_info">
+              <span>쇼핑몰: <a>SSG</a></span>
+              <span>가격: <a>84,537원</a></span>
+              <span>배송: <a>무배</a></span>
+            </div>
+            <span class="category"><a>SW/게임</a></span>
+            <span class="author"> / 작성자</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+    """
+    crawler_instance = crawler.FmkoreaCrawler("fmkorea", [])
+
+    try:
+        data = await crawler_instance.parsing(html)
+    finally:
+        await crawler_instance.close()
+
+    assert data[10118769542]["title"] == "닌텐도 프로콘2"

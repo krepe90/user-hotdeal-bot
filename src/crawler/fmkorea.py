@@ -43,10 +43,17 @@ class FmkoreaCrawler(BaseCrawler):
                 continue
             _id = int(_id_str)
             is_end = row.select_one(".hotdeal_var8Y") is not None
+            if (_title_text_tag := _title_tag.select_one(".ellipsis-target")) is not None:
+                title = _title_text_tag.get_text(strip=True)
+            elif (_title_text := _title_tag.find(string=True, recursive=False)) is not None:
+                title = _title_text.strip()
+            else:
+                self.logger.warning("Cannot get article title")
+                continue
 
             data[_id] = {
                 "article_id": _id,
-                "title": _title_tag.find(string=True, recursive=False).text.strip(),
+                "title": title,
                 "category": _category_tag.text.strip(),
                 "site_name": "에펨코리아",
                 "board_name": board_name,
