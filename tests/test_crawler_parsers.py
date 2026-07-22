@@ -1,6 +1,7 @@
 import pytest
 
 from src import crawler
+from src.tools import crawler as crawler_cli
 
 
 @pytest.mark.asyncio
@@ -179,4 +180,33 @@ async def test_zod_parses_current_definition_list_metadata():
         "price": "0원",
         "delivery": "무료",
         "recommend": 0,
+    }
+
+
+@pytest.mark.asyncio
+async def test_coolenjoy_cli_uses_rss_crawler(monkeypatch):
+    created = {}
+
+    class FakeRSSCrawler:
+        def __init__(self, name, url_list):
+            created["name"] = name
+            created["url_list"] = url_list
+
+        async def get(self):
+            return {}
+
+        async def close(self):
+            return None
+
+    def fail_html_crawler(*args, **kwargs):
+        pytest.fail("CoolenjoyCrawler must not receive the RSS URL")
+
+    monkeypatch.setattr(crawler_cli.crawler, "CoolenjoyRSSCrawler", FakeRSSCrawler)
+    monkeypatch.setattr(crawler_cli.crawler, "CoolenjoyCrawler", fail_html_crawler)
+
+    await crawler_cli.main("coolenjoy")
+
+    assert created == {
+        "name": "coolenjoy_crawler",
+        "url_list": ["https://coolenjoy.net/bbs/rss.php?bo_table=jirum"],
     }

@@ -38,7 +38,7 @@ async def main(module_name: str, detail: bool = False):
     elif module_name == "damoang":
         crawler_instance = crawler.DamoangCrawler("damoang_crawler", ["https://damoang.net/economy"])
     elif module_name == "coolenjoy":
-        crawler_instance = crawler.CoolenjoyCrawler(
+        crawler_instance = crawler.CoolenjoyRSSCrawler(
             "coolenjoy_crawler", ["https://coolenjoy.net/bbs/rss.php?bo_table=jirum"]
         )
     elif module_name == "quasarzone":
