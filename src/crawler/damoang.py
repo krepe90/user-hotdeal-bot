@@ -13,13 +13,64 @@ class DamoangCrawler(BaseCrawler):
         data: dict[int, BaseArticle] = {}
 
         if (_board_name := soup.select_one(".page-title")) is None:
-            self.logger.error("Can't find board name.")
-            return data
+            if (_board_name_meta := soup.select_one('meta[property="og:title"]')) is None or not (
+                board_name := _board_name_meta.get("content", "").strip()
+            ):
+                self.logger.error("Can't find board name.")
+                return data
+        else:
+            board_name = _board_name.text.strip()
         if (_board_url := soup.select_one("input[name=bo_table]")) is None:
-            self.logger.error("Can't find board url.")
+            if (_canonical := soup.select_one('link[rel="canonical"]')) is None or (
+                _board_url_match := re.search(r"/([^/?#]+)/?$", _canonical.get("href", ""))
+            ) is None:
+                self.logger.error("Can't find board url.")
+                return data
+            board_url = _board_url_match.group(1)
+        else:
+            board_url = _board_url.attrs["value"]
+
+        current_rows = soup.select(f'a.post-row[href^="/{board_url}/"]')
+        if current_rows:
+            for row in current_rows:
+                if (_url := row.get("href")) is None or (
+                    _re_url := re.fullmatch(rf"/{re.escape(board_url)}/(\d+)", _url)
+                ) is None:
+                    self.logger.warning("Cannot find board id and article id")
+                    continue
+                if (_title_tag := row.select_one(".post-title")) is None:
+                    self.logger.warning("Cannot get article title tag")
+                    continue
+                if (_category_tag := _title_tag.parent.find_previous_sibling("span")) is None:
+                    self.logger.warning("Cannot get article category tag")
+                    continue
+                meta_tags = row.select(".post-meta-text")
+                if len(meta_tags) < 3:
+                    self.logger.warning("Cannot get article metadata tags")
+                    continue
+                if (_recommend_tag := row.select_one(".mobile-meta > span")) is None:
+                    self.logger.warning("Cannot get article recommend tag")
+                    continue
+
+                _id = int(_re_url.group(1))
+                category = _category_tag.get_text(strip=True)
+                data[_id] = {
+                    "article_id": _id,
+                    "title": _title_tag.get_text(strip=True),
+                    "category": category,
+                    "site_name": "다모앙",
+                    "board_name": board_name,
+                    "writer_name": meta_tags[0].get_text(strip=True),
+                    "crawler_name": self.name,
+                    "url": f"https://damoang.net/{board_url}/{_id}",
+                    "is_end": category == "종료",
+                    "extra": {
+                        "recommend": _recommend_tag.get_text(strip=True),
+                        "view": meta_tags[-1].get_text(strip=True),
+                    },
+                }
             return data
-        board_name = _board_name.text.strip()
-        board_url = _board_url.attrs["value"]
+
         rows = soup.select("#bo_list .list-group-item:not(.d-none)")
 
         for row in rows:

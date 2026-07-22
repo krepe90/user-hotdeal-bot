@@ -97,3 +97,45 @@ async def test_fmkorea_parses_nested_ellipsis_title():
         await crawler_instance.close()
 
     assert data[10118769542]["title"] == "닌텐도 프로콘2"
+
+
+@pytest.mark.asyncio
+async def test_damoang_parses_current_post_rows():
+    html = """
+    <meta property="og:title" content="알뜰구매">
+    <link rel="canonical" href="https://damoang.net/economy">
+    <a class="post-row" href="/economy/77811">
+      <div>
+        <div><div>22</div></div>
+        <div>
+          <div>
+            <span>종료</span>
+            <span><span class="post-title">미친 가성비 백팩 추천</span></span>
+          </div>
+          <span class="post-meta-text"><span>작성자</span></span>
+          <span class="post-meta-text">07.22</span>
+          <span class="post-meta-text">2.8k</span>
+          <div class="mobile-meta"><span>22</span><span>07.22</span><span>2.8k</span></div>
+        </div>
+      </div>
+    </a>
+    """
+    crawler_instance = crawler.DamoangCrawler("damoang", [])
+
+    try:
+        data = await crawler_instance.parsing(html)
+    finally:
+        await crawler_instance.close()
+
+    assert data[77811] == {
+        "article_id": 77811,
+        "title": "미친 가성비 백팩 추천",
+        "category": "종료",
+        "site_name": "다모앙",
+        "board_name": "알뜰구매",
+        "writer_name": "작성자",
+        "crawler_name": "damoang",
+        "url": "https://damoang.net/economy/77811",
+        "is_end": True,
+        "extra": {"recommend": "22", "view": "2.8k"},
+    }
