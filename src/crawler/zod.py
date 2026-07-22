@@ -48,25 +48,26 @@ class ZodCrawler(BaseCrawler):
             title = title_tag.text.strip() if title_tag else ""
 
             category_tag = article_link.select_one(".zod-board--deal-meta-category")
-            category = category_tag.text.strip() if category_tag else ""
 
-            writer_tag = article_link.select_one(".app-list-member .tw-inline-flex")
+            writer_tag = article_link.select_one(".app-list-member")
             writer_name = writer_tag.text.strip() if writer_tag else ""
 
-            meta_tags = article_link.select(".app-list-meta.zod-board--deal-meta span")
+            meta_tags = article_link.select(".app-list-meta.zod-board--deal-meta strong")
             extra = {}
-            for meta in meta_tags:
-                strong_tag = meta.select_one("strong")
-                if strong_tag:
-                    meta_text = meta.text.strip()
-                    if "가격:" in meta_text:
-                        extra["price"] = strong_tag.text.strip()
-                    elif "배송비:" in meta_text:
-                        extra["delivery"] = strong_tag.text.strip()
-                    elif strong_tag.text.strip():
-                        extra["mall"] = strong_tag.text.strip()
+            for strong_tag in meta_tags:
+                meta_text = strong_tag.parent.get_text(" ", strip=True)
+                if "가격:" in meta_text:
+                    extra["price"] = strong_tag.text.strip()
+                elif "배송비:" in meta_text:
+                    extra["delivery"] = strong_tag.text.strip()
+                elif strong_tag.text.strip():
+                    extra["mall"] = strong_tag.text.strip()
+
+            category = category_tag.text.strip() if category_tag else extra.get("mall", "")
 
             recommend_tag = article_link.select_one(".app-list__voted-count span")
+            if recommend_tag is None:
+                recommend_tag = article_link.select_one(".app-list__voted-count")
             if recommend_tag and recommend_tag.text.strip().isdigit():
                 extra["recommend"] = int(recommend_tag.text.strip())
 

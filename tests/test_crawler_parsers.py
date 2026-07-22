@@ -139,3 +139,44 @@ async def test_damoang_parses_current_post_rows():
         "is_end": True,
         "extra": {"recommend": "22", "view": "2.8k"},
     }
+
+
+@pytest.mark.asyncio
+async def test_zod_parses_current_definition_list_metadata():
+    html = """
+    <div class="app-board-title"><a href="/deal">특가</a></div>
+    <div id="board-list">
+      <ul class="zod-board-list--deal">
+        <li>
+          <a href="/deal/8473120">
+            <span class="app-list-title-item">네이버페이 포인트</span>
+            <dl class="app-list-meta zod-board--deal-meta">
+              <dt>홈페이지/장소</dt><dd><strong>네이버</strong></dd>
+              <dt>가격</dt><dd>가격: <strong>0원</strong></dd>
+              <dt>배송비</dt><dd>배송비: <strong>무료</strong></dd>
+            </dl>
+            <dl class="app-list-meta">
+              <dt>작성자 닉네임</dt>
+              <dd class="app-list-member"><span>작성자</span></dd>
+              <dt>추천수</dt><dd class="app-list__voted-count">0</dd>
+            </dl>
+          </a>
+        </li>
+      </ul>
+    </div>
+    """
+    crawler_instance = crawler.ZodCrawler("zod", [])
+
+    try:
+        data = await crawler_instance.parsing(html)
+    finally:
+        await crawler_instance.close()
+
+    assert data[8473120]["writer_name"] == "작성자"
+    assert data[8473120]["category"] == "네이버"
+    assert data[8473120]["extra"] == {
+        "mall": "네이버",
+        "price": "0원",
+        "delivery": "무료",
+        "recommend": 0,
+    }
