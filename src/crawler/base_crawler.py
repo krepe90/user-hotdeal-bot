@@ -8,6 +8,8 @@ from typing import Any, Self, TypedDict
 import aiohttp
 import logfire
 
+from src.http_client import create_http_session
+
 
 class CrawlerExcpetion(Exception):
     pass
@@ -65,7 +67,7 @@ class ArticleCollection(dict[int, BaseArticle]):
 
 class BaseCrawler(metaclass=ABCMeta):
     def __init__(self, name: str, url_list: list[str], session: aiohttp.ClientSession | None = None) -> None:
-        self.session: aiohttp.ClientSession = session if session is not None else aiohttp.ClientSession(trust_env=True)
+        self.session: aiohttp.ClientSession = session if session is not None else create_http_session(trust_env=True)
         self.url_list: list[str] = url_list
         self.cls_name = self.__class__.__name__
         self.name = name

@@ -17,6 +17,7 @@ from src import (
     crawler,
     util,  # noqa: F401
 )
+from src.http_client import create_http_session
 
 __version__ = "2.2.1"
 
@@ -38,29 +39,33 @@ def load_config_file(config_path: str = "config.yaml") -> "Config":
 
 # 통합 설정 파일에서 로깅 설정 로드
 _config: "Config" = load_config_file()
-if "logging" in _config:
+is_testing = os.environ.get("TESTING") == "1"
+if not is_testing and "logging" in _config:
     logging.config.dictConfig(_config["logging"])
 
 # Logfire 설정
-logfire_config = _config.get("logfire", {})
-logfire_enabled = logfire_config.get("enabled", False)
-console_config = logfire_config.get("console", {})
+if is_testing:
+    logfire.configure(send_to_logfire=False, console=False)
+else:
+    logfire_config = _config.get("logfire", {})
+    logfire_enabled = logfire_config.get("enabled", False)
+    console_config = logfire_config.get("console", {})
 
-configure_options = {
-    "service_name": logfire_config.get("service_name", "user-hotdeal-bot"),
-    "service_version": __version__,
-    "send_to_logfire": logfire_enabled,
-    "environment": logfire_config.get("environment", "production"),
-}
-if not logfire_enabled:
-    configure_options["console"] = logfire.ConsoleOptions(
-        show_project_link=console_config.get("show_project_link", False)
-    )
-if "token" in logfire_config:
-    configure_options["token"] = logfire_config["token"]
-logfire.configure(**configure_options)
-logfire_handler = logfire.LogfireLoggingHandler()
-logging.getLogger().addHandler(logfire_handler)
+    configure_options = {
+        "service_name": logfire_config.get("service_name", "user-hotdeal-bot"),
+        "service_version": __version__,
+        "send_to_logfire": logfire_enabled,
+        "environment": logfire_config.get("environment", "production"),
+    }
+    if not logfire_enabled:
+        configure_options["console"] = logfire.ConsoleOptions(
+            show_project_link=console_config.get("show_project_link", False)
+        )
+    if "token" in logfire_config:
+        configure_options["token"] = logfire_config["token"]
+    logfire.configure(**configure_options)
+    logfire_handler = logfire.LogfireLoggingHandler()
+    logging.getLogger().addHandler(logfire_handler)
 logger_status = logging.getLogger("status")
 
 
@@ -237,7 +242,7 @@ class BotManager:
         """세션 초기화"""
         self.logger.info("Initializing start")
         timeout = aiohttp.ClientTimeout(total=20)
-        self.session = aiohttp.ClientSession(headers=HEADERS, trust_env=True, timeout=timeout)
+        self.session = create_http_session(headers=HEADERS, trust_env=True, timeout=timeout)
 
         # Logfire HTTP 인스트루멘테이션
         logfire.instrument_aiohttp_client()
