@@ -50,3 +50,7 @@ ignore = [
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.pyrefly]
+preset = "basic"
+search_path = ["."]
