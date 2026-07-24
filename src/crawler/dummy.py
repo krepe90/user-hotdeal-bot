@@ -1,13 +1,13 @@
 import random
 
-import aiohttp
+from src.http_client import HttpClient
 
 from .base_crawler import ArticleCollection, BaseArticle, BaseCrawler
 
 
 class DummyCrawler(BaseCrawler):
-    def __init__(self, name: str, url_list: list[str], session: aiohttp.ClientSession | None = None) -> None:
-        super().__init__(name, url_list, session)
+    def __init__(self, name: str, url_list: list[str], client: HttpClient | None = None) -> None:
+        super().__init__(name, url_list, client)
         self.start = 1
         self.dummy_data = {i: self._generate_article_object(i) for i in range(self.start, self.start + 10)}
 

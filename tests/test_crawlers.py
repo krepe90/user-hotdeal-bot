@@ -1,19 +1,15 @@
-import aiohttp
 import pytest
 import pytest_asyncio
 
 from src import crawler
-
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
-}
+from src.http_client import CurlCffiClient
 
 
 @pytest_asyncio.fixture
-async def session():
-    session = aiohttp.ClientSession(headers=HEADERS, trust_env=True, timeout=aiohttp.ClientTimeout(total=10))
-    yield session
-    await session.close()
+async def client():
+    client = CurlCffiClient(timeout=10)
+    yield client
+    await client.close()
 
 
 def validate_article_collection(data: crawler.ArticleCollection):
@@ -30,44 +26,44 @@ def validate_article_collection(data: crawler.ArticleCollection):
 
 @pytest.mark.skip("blocked by cloudflare")
 @pytest.mark.asyncio
-async def test_crawler_arca(session):
+async def test_crawler_arca(client):
     """아카라이브 핫딜 채널 크롤링 테스트 수행"""
-    crawler_instance = crawler.ArcaLiveCrawler("arcalive_hotdeal", ["https://arca.live/b/hotdeal"], session=session)
+    crawler_instance = crawler.ArcaLiveCrawler("arcalive_hotdeal", ["https://arca.live/b/hotdeal"], client=client)
     data: crawler.ArticleCollection = await crawler_instance.get()
     validate_article_collection(data)
 
 
 @pytest.mark.asyncio
-async def test_crawler_ppomppu(session):
+async def test_crawler_ppomppu(client):
     """뽐뿌 뽐뿌게시판 크롤링 테스트 수행"""
     crawler_instance = crawler.PpomppuCrawler(
         "ppomppu_crawler",
         ["https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu"],
-        session=session,
+        client=client,
     )
     data: crawler.ArticleCollection = await crawler_instance.get()
     validate_article_collection(data)
 
 
 @pytest.mark.asyncio
-async def test_crawler_ppomppu_rss(session):
+async def test_crawler_ppomppu_rss(client):
     """뽐뿌 뽐뿌게시판 RSS 크롤링 테스트 수행"""
     crawler_instance = crawler.PpomppuRSSCrawler(
         "ppomppu_rss_crawler",
         ["https://www.ppomppu.co.kr/rss.php?id=ppomppu"],
-        session=session,
+        client=client,
     )
     data: crawler.ArticleCollection = await crawler_instance.get()
     validate_article_collection(data)
 
 
 @pytest.mark.asyncio
-async def test_crawler_ruliweb(session):
+async def test_crawler_ruliweb(client):
     """루리웹 예구핫딜 게시판 크롤링 테스트 수행"""
     crawler_instance = crawler.RuliwebCrawler(
         "ruliweb_crawler",
         ["https://bbs.ruliweb.com/market/board/1020?view=thumbnail"],
-        session=session,
+        client=client,
     )
     data: crawler.ArticleCollection = await crawler_instance.get()
     validate_article_collection(data)
@@ -78,58 +74,58 @@ async def test_crawler_ruliweb(session):
 
 
 @pytest.mark.asyncio
-async def test_crawler_clien(session):
+async def test_crawler_clien(client):
     """클리앙 알뜰구매 게시판 크롤링 테스트 수행"""
     crawler_instance = crawler.ClienCrawler(
-        "clien_crawler", ["https://www.clien.net/service/board/jirum"], session=session
+        "clien_crawler", ["https://www.clien.net/service/board/jirum"], client=client
     )
     data: crawler.ArticleCollection = await crawler_instance.get()
     validate_article_collection(data)
 
 
 @pytest.mark.asyncio
-async def test_crawler_coolenjoy_rss(session):
+async def test_crawler_coolenjoy_rss(client):
     """쿨엔조이 지름/알뜰정보 게시판 크롤링 테스트 수행"""
     crawler_instance = crawler.CoolenjoyRSSCrawler(
         "coolenjoy_rss_crawler",
         ["https://coolenjoy.net/bbs/rss.php?bo_table=jirum"],
-        session=session,
+        client=client,
     )
     data: crawler.ArticleCollection = await crawler_instance.get()
     validate_article_collection(data)
 
 
 @pytest.mark.asyncio
-async def test_crawler_damoang(session):
+async def test_crawler_damoang(client):
     """다모앙 알뜰구매 게시판 크롤링 테스트 수행"""
-    crawler_instance = crawler.DamoangCrawler("damoang_crawler", ["https://damoang.net/economy"], session=session)
+    crawler_instance = crawler.DamoangCrawler("damoang_crawler", ["https://damoang.net/economy"], client=client)
     data: crawler.ArticleCollection = await crawler_instance.get()
     validate_article_collection(data)
 
 
 @pytest.mark.asyncio
-async def test_crawler_quasarzone(session):
+async def test_crawler_quasarzone(client):
     """퀘이사존 핫딜 게시판 크롤링 테스트 수행"""
     crawler_instance = crawler.QuasarzoneCrawler(
         "quasarzone_crawler",
         ["https://quasarzone.com/bbs/qb_saleinfo"],
-        session=session,
+        client=client,
     )
     data: crawler.ArticleCollection = await crawler_instance.get()
     validate_article_collection(data)
 
 
 @pytest.mark.asyncio
-async def test_crawler_fmkorea(session):
+async def test_crawler_fmkorea(client):
     """에펨코리아 핫딜 게시판 크롤링 테스트 수행"""
-    crawler_instance = crawler.FmkoreaCrawler("fmkorea_crawler", ["https://www.fmkorea.com/hotdeal"], session=session)
+    crawler_instance = crawler.FmkoreaCrawler("fmkorea_crawler", ["https://www.fmkorea.com/hotdeal"], client=client)
     data: crawler.ArticleCollection = await crawler_instance.get()
     validate_article_collection(data)
 
 
 @pytest.mark.asyncio
-async def test_crawler_zod(session):
+async def test_crawler_zod(client):
     """ZOD 특가 게시판 크롤링 테스트 수행"""
-    crawler_instance = crawler.ZodCrawler("zod_crawler", ["https://zod.kr/deal"], session=session)
+    crawler_instance = crawler.ZodCrawler("zod_crawler", ["https://zod.kr/deal"], client=client)
     data: crawler.ArticleCollection = await crawler_instance.get()
     validate_article_collection(data)

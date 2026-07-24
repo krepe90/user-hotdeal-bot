@@ -8,7 +8,6 @@ import sys
 import time
 from typing import Any, TypedDict
 
-import aiohttp
 import logfire
 import yaml
 
@@ -17,15 +16,9 @@ from src import (
     crawler,
     util,  # noqa: F401
 )
-from src.http_client import create_http_session
+from src.http_client import HttpClient, create_default_http_client
 
 __version__ = "2.2.1"
-
-
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
-    # "User-Agent": f"user-hotdeal-bot/{__version__} (+https://github.com/krepe90/user-hotdeal-bot)"
-}
 
 
 def load_config_file(config_path: str = "config.yaml") -> "Config":
@@ -233,19 +226,17 @@ class PersistenceManager:
 
 
 class BotManager:
-    def __init__(self):
+    def __init__(self, http_client: HttpClient | None = None):
         self.logger = logging.getLogger("BotManager")
         self.closed = False
         self.persistence = PersistenceManager()
+        self.http_client = http_client
 
     async def init_session(self):
         """세션 초기화"""
         self.logger.info("Initializing start")
-        timeout = aiohttp.ClientTimeout(total=20)
-        self.session = create_http_session(headers=HEADERS, trust_env=True, timeout=timeout)
-
-        # Logfire HTTP 인스트루멘테이션
-        logfire.instrument_aiohttp_client()
+        if self.http_client is None:
+            self.http_client = create_default_http_client()
 
         self.crawlers: dict[str, crawler.BaseCrawler] = {}
         self.bots: dict[str, bot.BaseBot] = {}
@@ -286,7 +277,9 @@ class BotManager:
                 self.logger.warning("Invalid crawler class: %s", crawler_cls_name)
                 continue
             # 크롤러 객체 생성
-            self.crawlers[crawler_name] = crawler_cls(crawler_name, crawler_config["url_list"], self.session)
+            if self.http_client is None:
+                raise RuntimeError("HTTP client is not initialized")
+            self.crawlers[crawler_name] = crawler_cls(crawler_name, crawler_config["url_list"], self.http_client)
             self.logger.info("Crawler initialized: %s (%s)", crawler_name, crawler_cls_name)
         # 남은 크롤러 객체 목록 출력 (삭제될 크롤러)
         for k, v in _crawlers_old.items():
@@ -535,11 +528,13 @@ class BotManager:
             return
         self.closed = True
         self.logger.info("session close start")
-        # 크롤러 세션 닫기
+        # 크롤러가 직접 소유한 HTTP 클라이언트 닫기
         for k, cwr in self.crawlers.items():
             self.logger.debug("cralwer close: %s", k)
-            if not cwr.session.closed:
-                await cwr.close()
+            await cwr.close()
+        # 애플리케이션 공유 HTTP 클라이언트 닫기
+        if self.http_client is not None and not self.http_client.closed:
+            await self.http_client.close()
         # 봇 세션 닫기
         for bot_name, bot_instance in self.bots.items():
             self.logger.debug("bot close: %s", bot_name)
