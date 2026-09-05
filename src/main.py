@@ -18,7 +18,7 @@ from src import (
 )
 from src.http_client import HttpClient, create_default_http_client
 
-__version__ = "2.3.1"
+__version__ = "2.3.2"
 
 
 def load_config_file(config_path: str = "config.yaml") -> "Config":
