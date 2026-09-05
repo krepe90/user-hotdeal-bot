@@ -86,15 +86,15 @@ class QuasarzoneCrawler(BaseCrawler):
     async def parsing(self, html: str) -> dict[int, BaseArticle]:
         soup = BeautifulSoup(html, "html.parser")
         # 게시판 이름
-        if (_board_name := soup.select_one(".l-title h2")) is None:
+        if (_board_name := soup.select_one(".v2-board-head__title, .l-title h2")) is None:
             self.logger.error("Can't find board name, skip parsing")
             return {}
         board_name = _board_name.text.strip()
         # 게시글 목록
-        if (table := soup.select_one(".market-info-type-list > table > tbody")) is None:
+        if (table := soup.select_one(".v2-list, .market-info-type-list > table > tbody")) is None:
             self.logger.error("Can't find article list, skip parsing")
             return {}
-        rows = table.select("tr")
+        rows = table.select(".v2-list-row--hotdeal:not(.v2-partner-row), tr")
 
         data: dict[int, BaseArticle] = {}
         for row in rows:
@@ -108,34 +108,43 @@ class QuasarzoneCrawler(BaseCrawler):
             if row.select_one(".fa-lock") is not None:
                 self.logger.debug("Find locked article, skip")
                 continue
-            if (_title_tag := row.select_one(".ellipsis-with-reply-cnt")) is None or not _title_tag.text:
+            _title_tag = _url_tag.select_one(".ellipsis-with-reply-cnt")
+            if _title_tag is None:
+                _title_tag = _url_tag
+            title = _title_tag.get_text().strip()
+            if not title:
                 self.logger.warning("Cannot find article title tag")
                 continue
-            if (_nick_tag := row.select_one(".nick")) is None or not _nick_tag.attrs.get("data-nick"):
+            if (_nick_tag := row.select_one(".v2-nick, .nick")) is None or not _nick_tag.attrs.get("data-nick"):
                 self.logger.warning("Cannot find article writer tag")
                 continue
-            if (_recommend_tag := row.select_one("td .num")) is None or not _recommend_tag.text:
+            if (_recommend_tag := row.select_one(".qc-count-good, td .num")) is None or not _recommend_tag.text:
                 self.logger.warning("Cannot get recommend value tag")
                 continue
-            if (_view_tag := row.select_one(".count")) is None or not _view_tag.text:
+            if (_view_tag := row.select_one(".qc-count-hit, .count")) is None or not _view_tag.text:
                 self.logger.warning("Cannot get view count tag")
                 continue
-            if (_info_tag := row.select_one(".market-info-sub p:first-child")) is None:
+            if "v2-list-row--hotdeal" in row.get("class", []):
+                _info = self.v2_info_parser(row)
+            elif (_info_tag := row.select_one(".market-info-sub p:first-child")) is not None:
+                _info = self.info_tag_parser(_info_tag)
+            else:
                 self.logger.warning("Cannot get sub info tag")
                 continue
-            if (_is_end_tag := row.select_one(".label")) and _is_end_tag.text.strip() == "종료":
+            if "is-done" in row.get("class", []) or (
+                (_is_end_tag := row.select_one(".v2-thumb-done, .label")) and _is_end_tag.text.strip() == "종료"
+            ):
                 is_end = True
             else:
                 is_end = False
             _board_id = _re_url.group(1)
             _id = int(_re_url.group(2))
-            _info = self.info_tag_parser(_info_tag)
             _category = _info.pop("category", "")
             if not _category:
                 self.logger.warning("Cannot get category")
             data[_id] = {
                 "article_id": _id,
-                "title": _title_tag.text.strip(),
+                "title": title,
                 "category": _category,
                 "site_name": "퀘이사존",
                 "board_name": board_name,
@@ -149,6 +158,18 @@ class QuasarzoneCrawler(BaseCrawler):
                     **_info,  # price, delivery, direct_delivery
                 },
             }
+        return data
+
+    def v2_info_parser(self, row: Tag) -> dict[str, str]:
+        data = {}
+        if (category := row.select_one(".v2-badge")) is not None:
+            data["category"] = category.get_text(strip=True)
+        if (price := row.select_one(".v2-list-row__price")) is not None:
+            data["price"] = price.get_text(strip=True)
+        for shipping in row.select(".v2-list-row__ship"):
+            text = shipping.get_text(strip=True)
+            if text.startswith("배송비"):
+                data["delivery"] = text.removeprefix("배송비").strip()
         return data
 
     def info_tag_parser(self, el: Tag) -> dict[str, str]:
